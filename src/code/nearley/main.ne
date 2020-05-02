@@ -268,7 +268,7 @@ SetVariable ->
     %IDEN _ "=" _ Expression
 {% d => ({
     type: "FunctionCall",
-    name: "data.set",
+    name: "data.setVar",
     args: [{
         type: "Constant",
         value: d[0].value

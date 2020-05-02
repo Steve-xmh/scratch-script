@@ -20,50 +20,54 @@ event_whenbroadcastreceived
 */
 
 module.exports = {
-    // Events
-    'events.flagClicked': {
-        opcode: 'event_whenflagclicked',
-        type: BlockType.Block
-    },
-    'events.pressedKey': {
-        opcode: 'event_whenkeypressed',
-        type: BlockType.Block
-    },
-    'events.clickedThis': {
-        opcode: 'event_whenthisspriteclicked',
-        type: BlockType.Block
-    },
-    'events.touched': {
-        opcode: 'event_whentouchingobject',
-        type: BlockType.Block,
-        inputs: [{
-            name: 'TOUCHINGOBJECTMENU',
-            type: InputType.Menu,
-            menuOpcode: 'event_touchingobjectmenu',
-            menu: {
-                mouse: {
-                    value: '_mouse_'
-                },
-                edge: {
-                    value: '_edge_'
+    id: 'events',
+    name: 'Events',
+    blocks: [
+        {
+            name: 'events.flagClicked',
+            opcode: 'event_whenflagclicked',
+            type: BlockType.EventBlock
+        }, {
+            name: 'events.pressedKey',
+            opcode: 'event_whenkeypressed',
+            type: BlockType.EventBlock
+        }, {
+            name: 'events.clickedThis',
+            opcode: 'event_whenthisspriteclicked',
+            type: BlockType.EventBlock
+        }, {
+            name: 'events.touched',
+            opcode: 'event_whentouchingobject',
+            type: BlockType.EventBlock,
+            args: [{
+                name: 'TOUCHINGOBJECTMENU',
+                type: InputType.Menu,
+                menuOpcode: 'event_touchingobjectmenu',
+                menu: {
+                    mouse: {
+                        value: '_mouse_'
+                    },
+                    edge: {
+                        value: '_edge_'
+                    }
                 }
-            }
-        }]
-    },
-    'events.clickedStage': {
-        opcode: 'event_whenstageclicked',
-        type: BlockType.Block
-    },
-    'events.back': {
-        opcode: 'event_whenbackdropswitchesto',
-        type: BlockType.Block
-    },
-    'events.greaterThan': {
-        opcode: 'event_whengreaterthan',
-        type: BlockType.Block
-    },
-    'events.gotBroadcast': {
-        opcode: 'event_whenbroadcastreceived',
-        type: BlockType.Block
-    }
+            }]
+        }, {
+            name: 'events.stageClicked',
+            opcode: 'event_whenstageclicked',
+            type: BlockType.EventBlock
+        }, {
+            name: 'events.switchedTo',
+            opcode: 'event_whenbackdropswitchesto',
+            type: BlockType.EventBlock
+        }, {
+            name: 'events.greaterThan',
+            opcode: 'event_whengreaterthan',
+            type: BlockType.EventBlock
+        }, {
+            name: 'events.gotBroadcast',
+            opcode: 'event_whenbroadcastreceived',
+            type: BlockType.EventBlock
+        }
+    ]
 }

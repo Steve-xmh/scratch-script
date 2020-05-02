@@ -1,3 +1,8 @@
+/**
+ * @enum {number}
+ * @readonly
+ * @exports
+ */
 const InputType = {
     /**
      * 4

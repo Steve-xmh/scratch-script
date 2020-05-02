@@ -8,17 +8,25 @@ const BlockType = {
      */
     CBlock: 2,
     /**
-     * 2, C-shape endless block
-     */
-    CEndlessBlock: 2,
-    /**
      * 3
      */
-    StringOrNumberReporter: 3,
+    ReporterBlock: 3,
     /**
      * 4
      */
-    BooleanReporter: 4
+    BooleanReporter: 4,
+    /**
+     * 5
+     */
+    EBlock: 5,
+    /**
+     * 6
+     */
+    EventBlock: 6,
+    /**
+     * 7
+     */
+    MutiSubstackBlock: 7
 }
 
 module.exports = BlockType

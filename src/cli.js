@@ -1,4 +1,4 @@
-const ss = require('./index')
+const ss = require('../dist')
 const path = require('path')
 const args = process.argv.slice(2)
 const fs = require('fs')
