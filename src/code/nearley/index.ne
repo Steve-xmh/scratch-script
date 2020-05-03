@@ -23,6 +23,8 @@ const lexer = moo.compile([
     {type: "RP", match: ")"},
     {type: "LMP", match: "["},
     {type: "RMP", match: "]"},
+    {type: "LCB", match: "{"},
+    {type: "RCB", match: "}"},
     {type: "GT", match: ">"},
     {type: "LT", match: "<"},
     {type: 'OP', match: /[&|\=\.]{2}|[\+\-\*\/\%\!\<\>=]/},
@@ -35,6 +37,7 @@ const lexer = moo.compile([
     {type: "KW_DEFINE", match: "define"},
     {type: "KW_END", match: "end"},
     {type: "KW_WHILE", match: "while"},
+    {type: "KW_FOREVER", match: "forever"},
     {type: "KW_REPEAT", match: "repeat"},
     {type: "KW_IF", match: "if"},
     {type: "KW_ELSE", match: "else"},
@@ -71,6 +74,8 @@ _Program -> _Program _ OutsideStatement {% d => {
     } %}
     | OutsideStatement {% v => [v[0]] %}
 
+OutsideStatement -> _OutsideStatement _ Delimiter
+
 OutsideStatement ->
     UsingStatement {% id %}
     | VariableDefinition {% id %}
@@ -95,7 +100,9 @@ _Block -> Statement
         return r
     } %}
 
-Statement -> 
+Statement -> _Statement _ Delimiter {% id %}
+
+_Statement -> 
     FunctionCall {% id %}
     | SetVariable {% id %}
     | RepeatCondition {% id %}
@@ -127,7 +134,7 @@ VariableDefinition ->
 VariableName -> (%IDEN | %BLOCKIDEN) {% v => v[0][0] %}
 
 EventListener ->
-    %KW_WHEN __ %BLOCKIDEN _ %LP _ ArgList _ %RP _ FunctionBody _ End
+    %KW_WHEN __ %BLOCKIDEN _ %LP _ ArgList _ %RP _ FunctionBody
 {% (d, pos, reject) => {
     return {
         type: "EventExpression",
@@ -141,7 +148,7 @@ EventListener ->
 
 # define *FunctionName* (*args*)
 FunctionDefinition ->
-    %KW_DEFINE __ %IDEN _ %LP _ ParamList _ %RP _ FunctionBody _ End
+    %KW_DEFINE __ %IDEN _ %LP _ ParamList _ %RP _ FunctionBody
 {% (d, pos, reject) => {
     return {
         type: "FunctionDefinition",
@@ -180,11 +187,11 @@ function ifCondition (d) {
 %}
 
 IfCondition ->
-    %KW_IF _ %LP _ Expression _ %RP _ FunctionBody _ %KW_END {% ifCondition %}
-    | %KW_IF _ %LP _ Expression _ %RP _ FunctionBody _ %KW_ELSE _ FunctionBody _ End {% ifCondition %}
+    %KW_IF _ %LP _ Expression _ %RP _ FunctionBody {% ifCondition %}
+    | %KW_IF _ %LP _ Expression _ %RP _ FunctionBody _ %KW_ELSE _ FunctionBody {% ifCondition %}
 
 WhileCondition ->
-    %KW_WHILE _ (%LP _ %RP _):? FunctionBody _ End
+    %KW_FOREVER _  FunctionBody
     {%
         (d, pos) => ({
             type: "LoopExpression",
@@ -194,7 +201,7 @@ WhileCondition ->
             col: d[0].col
         })
     %}
-    | %KW_WHILE _ %LP _ Expression _ %RP _ FunctionBody _ End
+    | %KW_WHILE _ %LP _ Expression _ %RP _ FunctionBody
     {%
         (d, pos) => ({
             type: "LoopExpression",
@@ -207,7 +214,7 @@ WhileCondition ->
     %}
 
 RepeatCondition ->
-    %KW_REPEAT _ %LP _ Expression _ %RP _ FunctionBody _ End
+    %KW_REPEAT _ %LP _ Expression _ %RP _ FunctionBody
     {%
         (d, pos) => ({
             type: "LoopExpression",
@@ -261,8 +268,10 @@ Param ->
         argumentType: "String"
     }) %}
 
-FunctionBody -> _ {% () => ([]) %}
-    | Block {% id %}
+FunctionBody -> %LCB _ _FunctionBody _ %RCB {% d => d[2] %}
+
+_FunctionBody -> _ {% () => ([]) %}
+    | Block {%id%}
 
 SetVariable ->
     %IDEN _ "=" _ Expression
@@ -440,6 +449,8 @@ Comment -> _ %COMMENT _
     message: d[1].value
 }) %}
 
+Delimiter -> __
+    | %DELIMITER
 
 End -> %KW_END
 __ -> %WS:+ {% v => {} %}

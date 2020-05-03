@@ -1,5 +1,14 @@
-script/
-src/
+scripts/
+node_modules/
 test/
+main.html
+yarn-error.log
+
+src/code
+src/project
+src/complieInNodeJS.js
+src/index.js
+
 .eslintrc.json
 .gitignore
+yarn-error.log

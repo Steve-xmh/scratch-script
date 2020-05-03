@@ -1,7 +1,7 @@
 {
-  "name": "scratch-script",
-  "version": "1.0.0",
-  "description": "An easy language to make huge scratch code more easliy.",
+  "name": "@steve-xmh/scratch-script",
+  "version": "0.1.1",
+  "description": "[WIP] An easy language to make huge scratch code more easliy.",
   "main": "src/index.js",
   "bin": {
     "ssc": "src/cli.js"
@@ -9,15 +9,24 @@
   "scripts": {
     "test": "node src/cli.js test/testProject test/output.sb3",
     "prepublish": "node scripts/prepublish.js",
-    "nearley": "nearleyc ./src/code/nearley/main.ne -o ./src/code/nearley/main.js",
-    "railroad": "nearley-railroad ./src/code/nearley/main.ne -o ./src/code/nearley/main.html"
+    "nearley": "nearleyc ./src/code/nearley/index.ne -o ./src/code/nearley/index.js",
+    "railroad": "nearley-railroad ./src/code/nearley/index.ne -o ./main.html"
   },
   "keywords": [
     "scratch",
     "complier",
-    "programing-language"
+    "programming-language"
   ],
-  "author": "Steve-xmh",
+  "author": {
+    "name": "Steve-xmh",
+    "email": "776470918@qq.com",
+    "url": "https://github.com/Steve-xmh"
+  },
+  "contributors": [{
+    "name": "alexcui03",
+    "email": "cuizhihui030925@outlook.com",
+    "url": "https://github.com/alexcui03"
+  }],
   "license": "AGPL-3.0-or-later",
   "dependencies": {
     "ajv": "^6.12.0",

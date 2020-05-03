@@ -26,6 +26,8 @@ const lexer = moo.compile([
     {type: "RP", match: ")"},
     {type: "LMP", match: "["},
     {type: "RMP", match: "]"},
+    {type: "LCB", match: "{"},
+    {type: "RCB", match: "}"},
     {type: "GT", match: ">"},
     {type: "LT", match: "<"},
     {type: 'OP', match: /[&|\=\.]{2}|[\+\-\*\/\%\!\<\>=]/},
@@ -35,7 +37,7 @@ const lexer = moo.compile([
     {type: "KW_IN", match: "in"},
     {type: "KW_LET", match: "let"},
     {type: "KW_WHEN", match: "when"},
-    {type: "KW_DEFINE", match: "define"},
+    {type: "KW_DEFINE", match: "def"},
     {type: "KW_END", match: "end"},
     {type: "KW_WHILE", match: "while"},
     {type: "KW_REPEAT", match: "repeat"},
@@ -183,12 +185,13 @@ var grammar = {
             r.push(d[2])
             return r
         } },
-    {"name": "Statement", "symbols": ["FunctionCall"], "postprocess": id},
-    {"name": "Statement", "symbols": ["SetVariable"], "postprocess": id},
-    {"name": "Statement", "symbols": ["RepeatCondition"], "postprocess": id},
-    {"name": "Statement", "symbols": ["WhileCondition"], "postprocess": id},
-    {"name": "Statement", "symbols": ["IfCondition"], "postprocess": id},
-    {"name": "Statement", "symbols": ["Comment"], "postprocess": id},
+    {"name": "Statement", "symbols": ["_Statement", (lexer.has("DELIMITER") ? {type: "DELIMITER"} : DELIMITER)], "postprocess": id},
+    {"name": "_Statement", "symbols": ["FunctionCall"], "postprocess": id},
+    {"name": "_Statement", "symbols": ["SetVariable"], "postprocess": id},
+    {"name": "_Statement", "symbols": ["RepeatCondition"], "postprocess": id},
+    {"name": "_Statement", "symbols": ["WhileCondition"], "postprocess": id},
+    {"name": "_Statement", "symbols": ["IfCondition"], "postprocess": id},
+    {"name": "_Statement", "symbols": ["Comment"], "postprocess": id},
     {"name": "VariableDefinition", "symbols": [(lexer.has("KW_VAR") ? {type: "KW_VAR"} : KW_VAR), "__", "VariableName"], "postprocess": variableDefinition},
     {"name": "VariableDefinition", "symbols": [(lexer.has("KW_VAR") ? {type: "KW_VAR"} : KW_VAR), "__", "VariableName", "_", {"literal":"="}, "_", "Constant"], "postprocess": variableDefinition},
     {"name": "VariableDefinition", "symbols": [(lexer.has("KW_VAR") ? {type: "KW_VAR"} : KW_VAR), "__", "VariableName", "_", {"literal":"="}, "_", "ListConstant"], "postprocess": variableDefinition},
@@ -198,7 +201,7 @@ var grammar = {
     {"name": "VariableName$subexpression$1", "symbols": [(lexer.has("IDEN") ? {type: "IDEN"} : IDEN)]},
     {"name": "VariableName$subexpression$1", "symbols": [(lexer.has("BLOCKIDEN") ? {type: "BLOCKIDEN"} : BLOCKIDEN)]},
     {"name": "VariableName", "symbols": ["VariableName$subexpression$1"], "postprocess": v => v[0][0]},
-    {"name": "EventListener", "symbols": [(lexer.has("KW_WHEN") ? {type: "KW_WHEN"} : KW_WHEN), "__", (lexer.has("BLOCKIDEN") ? {type: "BLOCKIDEN"} : BLOCKIDEN), "_", (lexer.has("LP") ? {type: "LP"} : LP), "_", "ArgList", "_", (lexer.has("RP") ? {type: "RP"} : RP), "_", "FunctionBody", "_", "End"], "postprocess":  (d, pos, reject) => {
+    {"name": "EventListener", "symbols": [(lexer.has("KW_WHEN") ? {type: "KW_WHEN"} : KW_WHEN), "__", (lexer.has("BLOCKIDEN") ? {type: "BLOCKIDEN"} : BLOCKIDEN), "_", (lexer.has("LP") ? {type: "LP"} : LP), "_", "ArgList", "_", (lexer.has("RP") ? {type: "RP"} : RP), "_", "FunctionBody"], "postprocess":  (d, pos, reject) => {
             return {
                 type: "EventExpression",
                 name: d[2].value,
@@ -208,7 +211,7 @@ var grammar = {
                 col: d[0].col
             }
         } },
-    {"name": "FunctionDefinition", "symbols": [(lexer.has("KW_DEFINE") ? {type: "KW_DEFINE"} : KW_DEFINE), "__", (lexer.has("IDEN") ? {type: "IDEN"} : IDEN), "_", (lexer.has("LP") ? {type: "LP"} : LP), "_", "ParamList", "_", (lexer.has("RP") ? {type: "RP"} : RP), "_", "FunctionBody", "_", "End"], "postprocess":  (d, pos, reject) => {
+    {"name": "FunctionDefinition", "symbols": [(lexer.has("KW_DEFINE") ? {type: "KW_DEFINE"} : KW_DEFINE), "__", (lexer.has("IDEN") ? {type: "IDEN"} : IDEN), "_", (lexer.has("LP") ? {type: "LP"} : LP), "_", "ParamList", "_", (lexer.has("RP") ? {type: "RP"} : RP), "_", "FunctionBody"], "postprocess":  (d, pos, reject) => {
             return {
                 type: "FunctionDefinition",
                 name: d[2].value,
@@ -228,12 +231,12 @@ var grammar = {
             line: d[0][0].line,
             col: d[0][0].col
         }) },
-    {"name": "IfCondition", "symbols": [(lexer.has("KW_IF") ? {type: "KW_IF"} : KW_IF), "_", (lexer.has("LP") ? {type: "LP"} : LP), "_", "Expression", "_", (lexer.has("RP") ? {type: "RP"} : RP), "_", "FunctionBody", "_", (lexer.has("KW_END") ? {type: "KW_END"} : KW_END)], "postprocess": ifCondition},
-    {"name": "IfCondition", "symbols": [(lexer.has("KW_IF") ? {type: "KW_IF"} : KW_IF), "_", (lexer.has("LP") ? {type: "LP"} : LP), "_", "Expression", "_", (lexer.has("RP") ? {type: "RP"} : RP), "_", "FunctionBody", "_", (lexer.has("KW_ELSE") ? {type: "KW_ELSE"} : KW_ELSE), "_", "FunctionBody", "_", "End"], "postprocess": ifCondition},
+    {"name": "IfCondition", "symbols": [(lexer.has("KW_IF") ? {type: "KW_IF"} : KW_IF), "_", (lexer.has("LP") ? {type: "LP"} : LP), "_", "Expression", "_", (lexer.has("RP") ? {type: "RP"} : RP), "_", "FunctionBody"], "postprocess": ifCondition},
+    {"name": "IfCondition", "symbols": [(lexer.has("KW_IF") ? {type: "KW_IF"} : KW_IF), "_", (lexer.has("LP") ? {type: "LP"} : LP), "_", "Expression", "_", (lexer.has("RP") ? {type: "RP"} : RP), "_", "FunctionBody", "_", (lexer.has("KW_ELSE") ? {type: "KW_ELSE"} : KW_ELSE), "_", "FunctionBody"], "postprocess": ifCondition},
     {"name": "WhileCondition$ebnf$1$subexpression$1", "symbols": [(lexer.has("LP") ? {type: "LP"} : LP), "_", (lexer.has("RP") ? {type: "RP"} : RP), "_"]},
     {"name": "WhileCondition$ebnf$1", "symbols": ["WhileCondition$ebnf$1$subexpression$1"], "postprocess": id},
     {"name": "WhileCondition$ebnf$1", "symbols": [], "postprocess": function(d) {return null;}},
-    {"name": "WhileCondition", "symbols": [(lexer.has("KW_WHILE") ? {type: "KW_WHILE"} : KW_WHILE), "_", "WhileCondition$ebnf$1", "FunctionBody", "_", "End"], "postprocess": 
+    {"name": "WhileCondition", "symbols": [(lexer.has("KW_WHILE") ? {type: "KW_WHILE"} : KW_WHILE), "_", "WhileCondition$ebnf$1", "FunctionBody"], "postprocess": 
         (d, pos) => ({
             type: "LoopExpression",
             loop: "forever",
@@ -242,7 +245,7 @@ var grammar = {
             col: d[0].col
         })
             },
-    {"name": "WhileCondition", "symbols": [(lexer.has("KW_WHILE") ? {type: "KW_WHILE"} : KW_WHILE), "_", (lexer.has("LP") ? {type: "LP"} : LP), "_", "Expression", "_", (lexer.has("RP") ? {type: "RP"} : RP), "_", "FunctionBody", "_", "End"], "postprocess": 
+    {"name": "WhileCondition", "symbols": [(lexer.has("KW_WHILE") ? {type: "KW_WHILE"} : KW_WHILE), "_", (lexer.has("LP") ? {type: "LP"} : LP), "_", "Expression", "_", (lexer.has("RP") ? {type: "RP"} : RP), "_", "FunctionBody"], "postprocess": 
         (d, pos) => ({
             type: "LoopExpression",
             loop: "condition",
@@ -252,7 +255,7 @@ var grammar = {
             col: d[0].col
         })
             },
-    {"name": "RepeatCondition", "symbols": [(lexer.has("KW_REPEAT") ? {type: "KW_REPEAT"} : KW_REPEAT), "_", (lexer.has("LP") ? {type: "LP"} : LP), "_", "Expression", "_", (lexer.has("RP") ? {type: "RP"} : RP), "_", "FunctionBody", "_", "End"], "postprocess": 
+    {"name": "RepeatCondition", "symbols": [(lexer.has("KW_REPEAT") ? {type: "KW_REPEAT"} : KW_REPEAT), "_", (lexer.has("LP") ? {type: "LP"} : LP), "_", "Expression", "_", (lexer.has("RP") ? {type: "RP"} : RP), "_", "FunctionBody"], "postprocess": 
         (d, pos) => ({
             type: "LoopExpression",
             loop: "repeat",
@@ -293,11 +296,12 @@ var grammar = {
             name: d[0].value,
             argumentType: "String"
         }) },
-    {"name": "FunctionBody", "symbols": ["_"], "postprocess": () => ([])},
-    {"name": "FunctionBody", "symbols": ["Block"], "postprocess": id},
+    {"name": "FunctionBody", "symbols": [(lexer.has("LCB") ? {type: "LCB"} : LCB), "_", "_FunctionBody", "_", (lexer.has("RCB") ? {type: "RCB"} : RCB)], "postprocess": d => d[2]},
+    {"name": "_FunctionBody", "symbols": ["_"], "postprocess": () => ([])},
+    {"name": "_FunctionBody", "symbols": ["Block"], "postprocess": id},
     {"name": "SetVariable", "symbols": [(lexer.has("IDEN") ? {type: "IDEN"} : IDEN), "_", {"literal":"="}, "_", "Expression"], "postprocess":  d => ({
             type: "FunctionCall",
-            name: "data.set",
+            name: "data.setVar",
             args: [{
                 type: "Constant",
                 value: d[0].value

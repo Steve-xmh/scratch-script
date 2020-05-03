@@ -9,6 +9,7 @@ module.exports = {
         {
             name: 'say',
             opcode: 'looks_sayforsecs',
+            type: BlockType.Block,
             inputs: [{
                 name: 'MESSAGE',
                 type: InputType.String
@@ -16,6 +17,7 @@ module.exports = {
         }, {
             name: 'sayFor',
             opcode: 'looks_sayforsecs',
+            type: BlockType.Block,
             inputs: [{
                 name: 'MESSAGE',
                 type: InputType.String

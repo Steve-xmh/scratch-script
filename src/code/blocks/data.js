@@ -1,4 +1,3 @@
-// data_setvariableto
 
 const InputType = require('../inputType')
 const BlockType = require('../blockType')
@@ -11,7 +10,7 @@ module.exports = {
             opcode: 'data_setvariableto',
             type: BlockType.Block,
             args: [{
-                name: 'MESSAGE',
+                name: 'VARIABLE',
                 type: InputType.Variable
             }, {
                 name: 'VALUE',

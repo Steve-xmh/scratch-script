@@ -4,8 +4,17 @@ const path = require('path')
 const JSZip = require('jszip')
 const projectParser = require('./project/parser')
 const code = require('./code/index')
-const WRITE_BG_FILE = path.resolve(__dirname, './project/writebg.png')
-const TRANS_BG_FILE = path.resolve(__dirname, './project/transparentbg.png')
+
+const WRITE_BG = '<svg xmlns="http://www.w3.org/2000/svg"version="1.1" width="480" height="360"><rect width="480"height="360"stroke="white"stroke-width="0"fill="white"/></svg>'
+const WRITE_BG_MD5 = 'cbc832ca55fdab3219bc972a555dd9b4'
+const WRITE_BG_FILENAME = 'cbc832ca55fdab3219bc972a555dd9b4.svg'
+
+const TRANS_BG = '<svg xmlns="http://www.w3.org/2000/svg"version="1.1" width="480" height="360"><rect width="480"height="360"stroke="transparent"stroke-width="0"fill="transparent"/></svg>'
+const TRANS_BG_MD5 = 'a07cd14a85ead82b17380fe5abe8335c'
+const TRANS_BG_FILENAME = 'a07cd14a85ead82b17380fe5abe8335c.svg'
+
+const EMPTY_AUDIO = require('./project/emptyAudio')
+
 const util = require('util')
 const crypto = require('crypto')
 
@@ -94,40 +103,80 @@ async function parseProject ({ projectInfo: proj, projectDir }) {
         return { hash, filename }
     }
 
+    function packWrite (name) {
+        if (!zip.files[WRITE_BG_FILENAME]) {
+            zip.file(WRITE_BG_FILENAME, WRITE_BG)
+        }
+        return {
+            assetId: WRITE_BG_MD5,
+            md5ext: WRITE_BG_FILENAME,
+            dataFormat: 'svg',
+            name,
+            rotationCenterX: 240,
+            rotationCenterY: 180
+        }
+    }
+    function packTrans (name) {
+        if (!zip.files[TRANS_BG_FILENAME]) {
+            zip.file(TRANS_BG_FILENAME, TRANS_BG)
+        }
+        return {
+            assetId: TRANS_BG_MD5,
+            md5ext: TRANS_BG_FILENAME,
+            dataFormat: 'svg',
+            name,
+            rotationCenterX: 240,
+            rotationCenterY: 180
+        }
+    }
+    function packEmptyAudio (name) {
+        if (!zip.files[EMPTY_AUDIO.filename]) {
+            zip.file(EMPTY_AUDIO.filename, EMPTY_AUDIO.data)
+        }
+        return {
+            assetId: EMPTY_AUDIO.hash,
+            md5ext: EMPTY_AUDIO.filename,
+            dataFormat: 'wav',
+            rate: 44100,
+            sampleCount: 0,
+            name
+        }
+    }
+
     // Collage resources
+    let counter = 0
     if (stage.costumes) {
         if (stage.costumes.length === 0) {
-            const desc = await packFile(WRITE_BG_FILE)
-            project.targets[0].costumes.push(
-                createFileDescription({
-                    hash: desc.hash,
-                    filename: desc.filename,
-                    name: 'Background'
-                })
-            )
+            if (!zip.files[WRITE_BG_FILENAME]) {
+                zip.file(WRITE_BG_FILENAME, WRITE_BG)
+            }
+            project.targets[0].costumes.push(packWrite('Background ' + (counter++)))
         } else {
             for (const costume of stage.costumes) {
-                costume.file = costume.file || TRANS_BG_FILE
-                const desc = await packFile(path.resolve(projectDir, costume.file))
-                project.targets[0].costumes.push(
-                    createFileDescription({
-                        hash: desc.hash,
-                        filename: desc.filename,
-                        name: costume.name
-                    })
-                )
+                if (costume.file) {
+                    const desc = await packFile(path.resolve(projectDir, costume.file))
+                    project.targets[0].costumes.push(
+                        createFileDescription({
+                            hash: desc.hash,
+                            filename: desc.filename,
+                            name: costume.name
+                        })
+                    )
+                } else {
+                    if (!zip.files[TRANS_BG_FILENAME]) {
+                        zip.file(TRANS_BG_FILENAME, TRANS_BG_MD5)
+                    }
+                    project.targets[0].costumes.push(packWrite('Background ' + (counter++)))
+                }
             }
         }
     } else {
-        const desc = await packFile(WRITE_BG_FILE)
-        project.targets[0].costumes.push(
-            createFileDescription({
-                hash: desc.hash,
-                filename: desc.filename,
-                name: 'Background'
-            })
-        )
+        if (!zip.files[WRITE_BG_FILENAME]) {
+            zip.file(WRITE_BG_FILENAME, WRITE_BG)
+        }
+        project.targets[0].costumes.push(packWrite('Background ' + (counter++)))
     }
+    // Sprites
     if (sprites && sprites.length > 0) {
         const nameSet = new Set()
         const nameGen = nameGenerator(nameSet)
@@ -146,28 +195,38 @@ async function parseProject ({ projectInfo: proj, projectDir }) {
             if (sprite.code && sprite.code.file) {
                 target.blocks = (await complieCode(path.resolve(projectDir, sprite.code.file))).blocks
             }
+            counter = 0
             if (sprite.costumes) {
                 for (const costume of sprite.costumes) {
-                    const desc = await packFile(path.resolve(projectDir, costume.file))
-                    target.costumes.push(
-                        createFileDescription({
-                            hash: desc.hash,
-                            filename: desc.filename,
-                            name: costume.name
-                        })
-                    )
+                    if (costume.file) {
+                        const desc = await packFile(path.resolve(projectDir, costume.file))
+                        target.costumes.push(
+                            createFileDescription({
+                                hash: desc.hash,
+                                filename: desc.filename,
+                                name: costume.name
+                            })
+                        )
+                    } else {
+                        project.targets[0].costumes.push(packTrans('Costume ' + (counter++)))
+                    }
                 }
             }
+            counter = 0
             if (sprite.sounds) {
                 for (const sound of sprite.sounds) {
-                    const desc = await packFile(path.resolve(projectDir, sound.file))
-                    target.sounds.push(
-                        createFileDescription({
-                            hash: desc.hash,
-                            filename: desc.filename,
-                            name: sound.name
-                        })
-                    )
+                    if (sound.file) {
+                        const desc = await packFile(path.resolve(projectDir, sound.file))
+                        target.sounds.push(
+                            createFileDescription({
+                                hash: desc.hash,
+                                filename: desc.filename,
+                                name: sound.name
+                            })
+                        )
+                    } else {
+                        target.sounds.push(packEmptyAudio('Sound ' + (counter++)))
+                    }
                 }
             }
             project.targets.push(target)
@@ -175,30 +234,24 @@ async function parseProject ({ projectInfo: proj, projectDir }) {
     }
 
     zip.file('project.json', JSON.stringify(project))
-    // console.log(project)
+
     console.log(
         util.formatWithOptions({ colors: true, depth: 10 },
             project
         )
     )
-    return zip.generateAsync({ type: 'nodebuffer' })
+    return zip.generateAsync({ type: 'uint8array' })
 }
 
-/*
-console.log(
-            util.formatWithOptions({ colors: true, depth: 10 },
-                projectInfo
-            )
-        )
- */
 async function complieInNodeJS ({
     projectDir
 }) {
-    const projectFile = path.resolve(projectDir, './project.yaml')
+    const projectFile = path.join(projectDir, './project.yaml')
+    console.log(projectDir, './project.yaml', projectFile)
     if ((await fs.stat(projectFile)).isFile()) {
         const projectInfo = projectParser(await fs.readFile(projectFile, { encoding: 'utf8' }))
         return parseProject({ projectInfo, projectDir })
-    } else if ((await fs.stat(path.resolve(projectDir, './project.json'))).isFile()) {
+    } else if ((await fs.stat(path.join(projectDir, './project.json'))).isFile()) {
         const projectInfo = projectParser(await fs.readFile(projectFile, { encoding: 'utf8' }), true)
         return parseProject({ projectInfo, projectDir })
     } else {

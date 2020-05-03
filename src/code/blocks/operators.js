@@ -2,85 +2,94 @@ const InputType = require('../inputType')
 const BlockType = require('../blockType')
 
 module.exports = {
-    // Operators
-    'math.random': {
+    name: 'Operators',
+    id: 'math',
+    blocks: [{
+        name: 'random',
         opcode: 'operator_random',
-        inputs: [{
+        type: BlockType.ReporterBlock,
+        args: [{
             name: 'FROM',
             type: InputType.Number
         }, {
             name: 'TO',
             type: InputType.Number
         }]
-    },
-    'math.add': {
+    }, {
+        name: 'add',
         opcode: 'operator_add',
-        inputs: [{
+        type: BlockType.ReporterBlock,
+        args: [{
             name: 'NUM1',
             type: InputType.Number
         }, {
             name: 'NUM2',
             type: InputType.Number
         }]
-    },
-    'math.sub': {
+    }, {
+        name: 'sub',
         opcode: 'operator_subtract',
-        inputs: [{
+        type: BlockType.ReporterBlock,
+        args: [{
             name: 'NUM1',
             type: InputType.Number
         }, {
             name: 'NUM2',
             type: InputType.Number
         }]
-    },
-    'math.multiply': {
+    }, {
+        name: 'multiply',
         opcode: 'operator_multiply',
-        inputs: [{
+        type: BlockType.ReporterBlock,
+        args: [{
             name: 'NUM1',
             type: InputType.Number
         }, {
             name: 'NUM2',
             type: InputType.Number
         }]
-    },
-    'math.divide': {
+    }, {
+        name: 'divide',
         opcode: 'operator_divide',
-        inputs: [{
+        type: BlockType.ReporterBlock,
+        args: [{
             name: 'NUM1',
             type: InputType.Number
         }, {
             name: 'NUM2',
             type: InputType.Number
         }]
-    },
-    'math.lt': {
+    }, {
+        name: 'lt',
         opcode: 'operator_lt',
-        inputs: [{
+        args: [{
             name: 'OPERAND1',
             type: InputType.Number
         }, {
             name: 'OPERAND2',
             type: InputType.Number
         }]
-    },
-    'math.equals': {
+    }, {
+        name: 'equals',
         opcode: 'operator_equals',
-        inputs: [{
+        type: BlockType.ReporterBlock,
+        args: [{
             name: 'OPERAND1',
             type: InputType.Number
         }, {
             name: 'OPERAND2',
             type: InputType.Number
         }]
-    },
-    'math.gt': {
+    }, {
+        name: 'gt',
         opcode: 'operator_gt',
-        inputs: [{
+        type: BlockType.ReporterBlock,
+        args: [{
             name: 'OPERAND1',
             type: InputType.Number
         }, {
             name: 'OPERAND2',
             type: InputType.Number
         }]
-    }
+    }]
 }

@@ -1,15 +1,7 @@
-
-/*
-paren
-identifier
-op
-number
-string
-*/
 const nearley = require('nearley')
-const grammar = nearley.Grammar.fromCompiled(require('./nearley/main'))
+const grammar = nearley.Grammar.fromCompiled(require('./nearley'))
 const te = token => new TypeError(`Unknown token "${token.value}" at ${token.location.line}:${token.location.row}`)
-const util = require('util')
+
 /**
  * Parse source code into ast.
  * @param {string} src The tokens array
