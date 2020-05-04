@@ -1,14 +1,15 @@
 {
-  "name": "@steve-xmh/scratch-script",
-  "version": "0.1.1",
+  "name": "scratch-script",
+  "version": "0.1.3",
   "description": "[WIP] An easy language to make huge scratch code more easliy.",
+  "repository": "https://github.com/Steve-xmh/scratch-script",
   "main": "src/index.js",
   "bin": {
     "ssc": "src/cli.js"
   },
   "scripts": {
     "test": "node src/cli.js test/testProject test/output.sb3",
-    "prepublish": "node scripts/prepublish.js",
+    "prepublish": "npm run nearley && node scripts/prepublish.js",
     "nearley": "nearleyc ./src/code/nearley/index.ne -o ./src/code/nearley/index.js",
     "railroad": "nearley-railroad ./src/code/nearley/index.ne -o ./main.html"
   },
@@ -22,11 +23,18 @@
     "email": "776470918@qq.com",
     "url": "https://github.com/Steve-xmh"
   },
-  "contributors": [{
-    "name": "alexcui03",
-    "email": "cuizhihui030925@outlook.com",
-    "url": "https://github.com/alexcui03"
-  }],
+  "contributors": [
+    {
+      "name": "Steve-xmh",
+      "email": "776470918@qq.com",
+      "url": "https://github.com/Steve-xmh"
+    },
+    {
+      "name": "alexcui03",
+      "email": "cuizhihui030925@outlook.com",
+      "url": "https://github.com/alexcui03"
+    }
+  ],
   "license": "AGPL-3.0-or-later",
   "dependencies": {
     "ajv": "^6.12.0",
