@@ -11,7 +11,7 @@
  * @property {number} type
  * @property {number} subn
  * @property {Array.<ArgumentD>} args
- * @property {(node: any) => any} preprocess
+ * @property {(node: import('../parser').Constant) => string} preprocess
  *
  * @typedef {Object} BlockDefinition
  * @property {string} name
@@ -37,7 +37,7 @@ class BlockStorage {
      */
     register (desc) {
         if (!desc || typeof desc.id !== 'string') {
-            throw new Error(`Extention ${desc} doesn't have a id or not exists`)
+            throw new Error(`Extention ${desc.id || desc.name} doesn't have a id or not exists`)
         }
         if (this._blocks[desc.id] !== undefined) {
             throw new Error(`Extention ${desc.id} has been registered`)
@@ -48,12 +48,15 @@ class BlockStorage {
 
     /**
      * @param {string} blockiden
-     * @returns {BlockD | null}
+     * @param {number} argn
+     * @returns {BlockD?}
      */
-    getBlock (blockiden) {
+    getBlock (blockiden, argn = 0) {
         const [id, name] = blockiden.split('.')
         if (!this._blocks[id]) return null
-        return this._blocks[id].blocks.find(v => v.name === name) || null
+        return this._blocks[id].blocks.find(v => v.name === name &&
+            (v.args ? (v.args.length === argn) : (argn === 0))
+        ) || null
     }
 }
 
@@ -63,3 +66,4 @@ module.exports = new BlockStorage()
     .register(require('./operators'))
     .register(require('./data'))
     .register(require('./looks'))
+    .register(require('./control'))

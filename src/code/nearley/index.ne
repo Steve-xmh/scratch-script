@@ -6,7 +6,7 @@ const lexer = moo.compile([
     {type: "COMMENT", match: /\/\*[\W\w]*?\*\//, value: x => x.slice(2, -3)},
     {type: "COMMENT", match: /\/{2}(?:.*)$/, value: x => x.slice(2)},
 
-    {type: "WS", match: /[ \t\n\r]+/, lineBreaks: true},
+    {type: "SPACE", match: /\s+/, lineBreaks: true},
     {type: "DELIMITER", match: ";"},
 
     {type: "STRING",  match: /".*?"/, value: x => JSON.parse(x)},
@@ -42,6 +42,9 @@ const lexer = moo.compile([
     {type: "KW_IF", match: "if"},
     {type: "KW_ELSE", match: "else"},
     {type: "KW_USING", match: "using"},
+    {type: "KW_NUMBER", match: "number"},
+    {type: "KW_STRING", match: "string"},
+    {type: "KW_BOOL", match: "bool"},
 
     {type: "BLOCKIDEN", match: /[a-zA-Z_][0-9a-zA-Z_]*\.[a-zA-Z_][0-9a-zA-Z_]*/},
     {type: "IDEN", match: /[a-zA-Z_][0-9a-zA-Z_]*/},
@@ -50,31 +53,24 @@ const lexer = moo.compile([
     {type: "ERROR", error: true},
 ])
 
-function postProgram (d) {
-    
-    return {
+%}
+
+@lexer lexer
+
+Program -> _ _Program _ {% d => ({
         type: "Program",
         listeners: d[1].filter(ast => ast.type === "EventExpression"),
         procedures: d[1].filter(ast => ast.type === "FunctionDefinition"),
         variables: d[1].filter(ast => ast.type === "VariableDefinition"),
         usings: d[1].filter(ast => ast.type === "UsingStatement").map(v => v.file)
-    }
-}
+    }) %}
 
-%}
-
-@lexer lexer
-
-Program -> _ _Program _ {% postProgram %}
-
-_Program -> _Program _ OutsideStatement {% d => {
+_Program -> _Program Delimiter OutsideStatement {% d => {
         const r = d[0].map(v => v)
         r.push(d[2])
         return r
     } %}
     | OutsideStatement {% v => [v[0]] %}
-
-OutsideStatement -> _OutsideStatement _ Delimiter
 
 OutsideStatement ->
     UsingStatement {% id %}
@@ -90,17 +86,17 @@ UsingStatement -> %KW_USING _ %STRING {% d => ({
     col: d[0].col
 }) %}
 
-Block -> _Block {% id %}
+Block -> _ _Block {% d => d[1] %}
     | _ {% v => [] %}
 
-_Block -> Statement
+_Block -> Statement {% d => [d[0]] %}
     | _Block _ Statement {% d => {
         const r = d[0].map(v => v)
         r.push(d[2])
         return r
     } %}
 
-Statement -> _Statement _ Delimiter {% id %}
+Statement -> _Statement Delimiter {% id %}
 
 _Statement -> 
     FunctionCall {% id %}
@@ -110,31 +106,8 @@ _Statement ->
     | IfCondition {% id %}
     | Comment {% id %}
 
-@{%
-
-function variableDefinition (d) {
-    return {
-        type: "VariableDefinition",
-        islocal: d[0] === "let",
-        name: d[2].value,
-        value: d[6]
-    }
-}
-
-%}
-
-VariableDefinition ->
-    %KW_VAR __ VariableName {% variableDefinition %}
-    | %KW_VAR __ VariableName _ "=" _ Constant {% variableDefinition %}
-    | %KW_VAR __ VariableName _ "=" _ ListConstant {% variableDefinition %}
-    | %KW_LET __ VariableName {% variableDefinition %}
-    | %KW_LET __ VariableName _ "=" _ Constant {% variableDefinition %}
-    | %KW_LET __ VariableName _ "=" _ ListConstant {% variableDefinition %}
-
-VariableName -> (%IDEN | %BLOCKIDEN) {% v => v[0][0] %}
-
 EventListener ->
-    %KW_WHEN __ %BLOCKIDEN _ %LP _ ArgList _ %RP _ FunctionBody
+    %KW_WHEN __ %BLOCKIDEN _ "(" _ ArgList _ ")" _ FunctionBody
 {% (d, pos, reject) => {
     return {
         type: "EventExpression",
@@ -148,7 +121,7 @@ EventListener ->
 
 # define *FunctionName* (*args*)
 FunctionDefinition ->
-    %KW_DEFINE __ %IDEN _ %LP _ ParamList _ %RP _ FunctionBody
+    %KW_DEFINE __ %IDEN _ "(" _ ParamList _ ")" _ FunctionBody
 {% (d, pos, reject) => {
     return {
         type: "FunctionDefinition",
@@ -161,21 +134,39 @@ FunctionDefinition ->
 } %}
 
 FunctionCall ->
-    (%BLOCKIDEN | %IDEN) _ %LP _ ArgList _ %RP _ InCases
+    (%BLOCKIDEN | %IDEN) _ "(" _ ArgList _ ")" InCases
 {% d => ({
     type: "FunctionCall",
     name: d[0][0].value,
     args: d[4],
-    cases: d[8],
+    cases: d[7],
     line: d[0][0].line,
     col: d[0][0].col
 }) %}
+
+VariableDefinition -> _VariableDefinition {% ([d]) => ({
+        type: "VariableDefinition",
+        islocal: d[0].value === "let",
+        name: d[2].value,
+        value: d[6],
+        line: d[0].line,
+        col: d[0].col
+    }) %}
+_VariableDefinition ->
+    "var" __ VariableName
+    | "var" __ VariableName _ "=" _ Constant
+    | "var" __ VariableName _ "=" _ ListConstant
+    | "let" __ VariableName
+    | "let" __ VariableName _ "=" _ Constant
+    | "let" __ VariableName _ "=" _ ListConstant
+
+VariableName -> (%IDEN | %BLOCKIDEN) {% v => v[0][0] %}
 
 @{%
 
 function ifCondition (d) {
     return {
-        type: "IfCondition",
+        type: "FunctionCall",
         condition: d[4],
         trueBlock: d[8],
         falseBlock: d[12],
@@ -187,52 +178,132 @@ function ifCondition (d) {
 %}
 
 IfCondition ->
-    %KW_IF _ %LP _ Expression _ %RP _ FunctionBody {% ifCondition %}
-    | %KW_IF _ %LP _ Expression _ %RP _ FunctionBody _ %KW_ELSE _ FunctionBody {% ifCondition %}
+    "if" _ "(" _ Expression _ ")" _ FunctionBody {% d => ({
+        type: "FunctionCall",
+        name: "control.if",
+        args: [d[4]],
+        cases: [{
+                type: "CaseBody",
+                name: {
+                    type: "Constant",
+                    value: 1,
+                    line: d[0].line,
+                    col: d[0].col
+                },
+                body: d[8],
+                line: d[0].line,
+                col: d[0].col
+            }],
+        line: d[0].line,
+        col: d[0].col
+    }) %}
+    | "if" _ "(" _ Expression _ ")" _ FunctionBody _ "else" _ FunctionBody {% d => ({
+        type: "FunctionCall",
+        name: "control.ifelse",
+        args: [d[4]],
+        cases: [{
+                type: "CaseBody",
+                name: {
+                    type: "Constant",
+                    value: 1,
+                    line: d[0].line,
+                    col: d[0].col
+                },
+                body: d[8],
+                line: d[0].line,
+                col: d[0].col
+            }, {
+                type: "CaseBody",
+                name: {
+                    type: "Constant",
+                    value: 2,
+                    line: d[0].line,
+                    col: d[0].col
+                },
+                body: d[12],
+                line: d[0].line,
+                col: d[0].col
+            }],
+        line: d[0].line,
+        col: d[0].col
+    }) %}
 
 WhileCondition ->
-    %KW_FOREVER _  FunctionBody
+    "forever" _  FunctionBody
     {%
-        (d, pos) => ({
-            type: "LoopExpression",
-            loop: "forever",
-            body: d[3],
+        d => ({
+            type: "FunctionCall",
+            name: "control.forever",
+            args: [],
+            cases: [{
+                type: "CaseBody",
+                name: {
+                    type: "Constant",
+                    value: 1,
+                    line: d[0].line,
+                    col: d[0].col
+                },
+                body: d[2],
+                line: d[0].line,
+                col: d[0].col
+            }],
             line: d[0].line,
             col: d[0].col
         })
     %}
-    | %KW_WHILE _ %LP _ Expression _ %RP _ FunctionBody
+    | %KW_WHILE _ "(" _ Expression _ ")" _ FunctionBody
     {%
-        (d, pos) => ({
-            type: "LoopExpression",
-            loop: "condition",
-            condition: d[4],
-            body: d[8],
+        d => ({
+            type: "FunctionCall",
+            name: "control.while",
+            args: [d[4]],
+            cases: [{
+                type: "CaseBody",
+                name: {
+                    type: "Constant",
+                    value: 1,
+                    line: d[0].line,
+                    col: d[0].col
+                },
+                body: d[8],
+                line: d[0].line,
+                col: d[0].col
+            }],
             line: d[0].line,
             col: d[0].col
         })
     %}
 
 RepeatCondition ->
-    %KW_REPEAT _ %LP _ Expression _ %RP _ FunctionBody
+    "repeat" _ "(" _ Expression _ ")" _ FunctionBody
     {%
-        (d, pos) => ({
-            type: "LoopExpression",
-            loop: "repeat",
-            time: d[4],
-            body: d[8],
+        d => ({
+            type: "FunctionCall",
+            name: "control.repeat",
+            args: [d[4]],
+            cases: [{
+                type: "CaseBody",
+                name: {
+                    type: "Constant",
+                    value: 1,
+                    line: d[0].line,
+                    col: d[0].col
+                },
+                body: d[8],
+                line: d[0].line,
+                col: d[0].col
+            }],
             line: d[0].line,
             col: d[0].col
         })
     %}
 
 ArgList -> ExpList {% id %}
-    | _ {% () => [] %}
 
 # Cases
 
-InCases -> null {% d => null %}
-    | _InCases _ %KW_END {% d => Object.fromEntries(d[0]) %}
+InCases -> null {% d => [] %}
+    | _ _InCases _ %KW_END _ {% d => Object.fromEntries(d[0]) %}
 
 _InCases ->
     InCase
@@ -252,26 +323,15 @@ ParamList ->
     | ParamList _ %COMMA _ Param {% d => { const t = d[0]; t.push(d[4]); return t } %}
 
 Param ->
-    %LT %IDEN %GT {% d => ({
-        type: "Argument",
-        name: d[1].value,
-        argumentType: "Boolean"
-    }) %}
-    | %LMP %IDEN %RMP {% d => ({
-        type: "Argument",
-        name: d[1].value,
-        argumentType: "String"
-    }) %}
-    | %IDEN {% d => ({
+    %IDEN (_ ":" _ (%KW_STRING | %KW_NUMBER | %KW_BOOL)):? {% d => ({
         type: "Argument",
         name: d[0].value,
-        argumentType: "String"
+        argumentType: d[1] ? d[1][3][0].value : "string",
+        line: d[0].line,
+        col: d[0].col
     }) %}
 
-FunctionBody -> %LCB _ _FunctionBody _ %RCB {% d => d[2] %}
-
-_FunctionBody -> _ {% () => ([]) %}
-    | Block {%id%}
+FunctionBody -> %LCB Block %RCB {% d => d[1] %}
 
 SetVariable ->
     %IDEN _ "=" _ Expression
@@ -286,13 +346,13 @@ SetVariable ->
     col: d[0].col
 }) %}
 
-ExpList -> ExpList _ "," _ Expression
+ExpList -> ExpList _ %COMMA _ Expression
     {% d => {
         const r = d[0].map(v => v)
         r.push(d[4])
         return r
     } %}
-    | Expression {% d => [d[0]] %}
+    | Expression {% d => (d[0] === undefined || d[0] === null) ? [] : d %}
 
 # Expressions
 Expression -> ExpOr {% id %}
@@ -302,44 +362,6 @@ Expression -> ExpOr {% id %}
 const Cast = require("./cast")
 
 function tryCalculate ([left,,sym,,right]) {
-    /*
-    if (typeof left === "object" && typeof right === "object" &&
-        left.type === "Constant" && right.type === "Constant") {
-        function preCalculate (left, sym, right) {
-            if (sym === "<") return Cast.compare(left, right) < 0
-            if (sym === ">") return Cast.compare(left, right) > 0
-            if (sym === "==") return Cast.compare(left, right) === 0
-            if (sym === ".." && typeof left === "string") return Cast.toString(left) + Cast.toString(right)
-            if (sym === "+") return Cast.toNumber(left) + Cast.toNumber(right)
-            if (sym === "-") return Cast.toNumber(left) - Cast.toNumber(right)
-            if (sym === "*") return Cast.toNumber(left) * Cast.toNumber(right)
-            if (sym === "/") return Cast.toNumber(left) / Cast.toNumber(right)
-            if (sym === "%") {
-                const n = Cast.toNumber(left)
-                const modulus = Cast.toNumber(right)
-                let result = n % modulus
-                if (result / modulus < 0) result += modulus
-                return result
-            }
-            if (sym === "||") return Cast.toBoolean(left) || Cast.toBoolean(right)
-            if (sym === "&&") return Cast.toBoolean(left) && Cast.toBoolean(right)
-        }
-        return {
-            type: "Constant",
-            value: preCalculate(left.value, sym.value, right.value),
-            line: left.line,
-            col: left.col
-        }
-    }
-    if (sym === "!" && left.type === "Constant") {
-        return {
-            type: "Constant",
-            value: !Cast.toBoolean(left.value),
-            line: left.line,
-            col: left.col
-        }
-    }
-    */
     const blocks = {
         "+": "math.add",
         "-": "math.sub",
@@ -365,7 +387,7 @@ function tryCalculate ([left,,sym,,right]) {
 
 %}
 
-Parenthesized -> %LP Expression %RP {% d => d[1] %}
+Parenthesized -> "(" Expression ")" {% d => d[1] %}
  
 ExpOr -> ExpOr __ "||" __ ExpAnd {% tryCalculate %}
 	| ExpAnd {% id %}
@@ -376,8 +398,6 @@ ExpAnd -> ExpAnd __ "&&" __ ExpComparison {% tryCalculate %}
 ExpComparison ->
 	  ExpComparison _ ">"  _ ExpConcatenation {% tryCalculate %}
 	| ExpComparison _ "<"  _ ExpConcatenation {% tryCalculate %}
-	# | ExpComparison _ "<=" _ ExpConcatenation {% tryCalculate %}
-	# | ExpComparison _ ">=" _ ExpConcatenation {% tryCalculate %}
 	| ExpEquals {% id %}
  
 ExpEquals -> ExpComparison _ "==" _ ExpConcatenation {% tryCalculate %}
@@ -400,7 +420,7 @@ ExpProduct ->
 	| Atom {% id %}
 
 Atom -> 
-    null
+    null {% id %}
     | FunctionCall {% id %}
     | (%BLOCKIDEN | %IDEN) {% ([[name]]) => ({
         type: "Literal",
@@ -414,8 +434,8 @@ Atom ->
 ListConstant -> "[" _ ListItems _ "]" {% d => d[2] %}
     | "[" _ "]" {% d => [] %}
 
-ListItems -> Constant _ "," _ ListItems {% d => [d[0], ...d[4]]%}
-    | Constant _ "," {% d => [d[0]]%}
+ListItems -> Constant _ %COMMA _ ListItems {% d => [d[0], ...d[4]]%}
+    | Constant _ %COMMA {% d => [d[0]]%}
     | Constant
 
 Constant ->
@@ -443,15 +463,16 @@ Constant ->
         col: d.col
     }) %}
 
-Comment -> _ %COMMENT _
+Comment -> %COMMENT
 {% d => ({
     type: "Comment",
-    message: d[1].value
+    message: d[1].value,
+    line: d[1].line,
+    col: d[1].col
 }) %}
 
-Delimiter -> __
-    | %DELIMITER
+Delimiter -> _ %DELIMITER _  {% null %}
+    | __ {% null %}
 
-End -> %KW_END
-__ -> %WS:+ {% v => {} %}
-_ -> (%WS:*) {% v => {} %}
+_ -> null | %SPACE {% null %}
+__ ->  %SPACE {% null %}

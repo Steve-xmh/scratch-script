@@ -35,7 +35,7 @@ module.exports = {
             opcode: 'motion_changexby',
             type: BlockType.Block,
             args: [{
-                name: 'DY',
+                name: 'DX',
                 type: InputType.Number
             }]
         }, {
@@ -50,14 +50,16 @@ module.exports = {
                 name: 'TO',
                 type: InputType.Menu,
                 menuOpcode: 'motion_goto_menu',
-                menu: {
-                    mouse: {
-                        value: '_mouse_'
-                    },
-                    random: {
-                        value: '_random_'
-                    }
-                }
+                menu: (v) => ({
+                    value: ({
+                        mouse: {
+                            value: '_mouse_'
+                        },
+                        random: {
+                            value: '_random_'
+                        }
+                    }[v[0].value])
+                })
             }]
         }
     ]

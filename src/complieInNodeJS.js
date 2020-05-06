@@ -5,17 +5,9 @@ const JSZip = require('jszip')
 const projectParser = require('./project/parser')
 const code = require('./code/index')
 
-const WRITE_BG = '<svg xmlns="http://www.w3.org/2000/svg"version="1.1" width="480" height="360"><rect width="480"height="360"stroke="white"stroke-width="0"fill="white"/></svg>'
-const WRITE_BG_MD5 = 'cbc832ca55fdab3219bc972a555dd9b4'
-const WRITE_BG_FILENAME = 'cbc832ca55fdab3219bc972a555dd9b4.svg'
-
-const TRANS_BG = '<svg xmlns="http://www.w3.org/2000/svg"version="1.1" width="480" height="360"><rect width="480"height="360"stroke="transparent"stroke-width="0"fill="transparent"/></svg>'
-const TRANS_BG_MD5 = 'a07cd14a85ead82b17380fe5abe8335c'
-const TRANS_BG_FILENAME = 'a07cd14a85ead82b17380fe5abe8335c.svg'
-
 const EMPTY_AUDIO = require('./project/emptyAudio')
+const EMPTY_SVG = require('./project/emptySvg')
 
-const util = require('util')
 const crypto = require('crypto')
 
 function createFileDescription ({ hash, filename, name, x, y }) {
@@ -51,24 +43,65 @@ function createTarget (isStage = false) {
     }
 }
 
-async function complieCode (start) {
+const setPath = (obj, path = [''], value = undefined) => {
+    let temp = obj
+    console.log(path.slice(0, -2))
+    for (const key of path.slice(0, -2)) {
+        temp = temp[key]
+    }
+    temp[path[path.length - 1]] = value
+}
+
+async function complieCode (start, target, stage = null) {
     try {
-        return code.generator(code.parser(await fs.readFile(start, { encoding: 'utf8' })))
+        const startTime = Date.now()
+        const codeResults = code.generator(code.parser(await fs.readFile(start, { encoding: 'utf8' })))
+        for (const variable of codeResults.ast.variables) {
+            console.log(variable)
+            if (!variable.islocal && stage) {
+                if (variable.value instanceof Array) {
+                    const stageVar = Object.entries(stage.variables).find(v => v[1][0] === variable.name)
+                    if (stageVar) {
+                        for (const usedPath of variable.used) {
+                            setPath(codeResults.blocks, usedPath, stageVar[1])
+                        }
+                    }
+                } else {
+                    const stageList = Object.entries(stage.lists).find(v => v[1][0] === variable.name)
+                    if (stageList) {
+                        for (const usedPath of variable.used) {
+                            setPath(codeResults.blocks, usedPath, stageList[1])
+                        }
+                    }
+                }
+            } else {
+                if (variable.value instanceof Array) {
+                    target.lists[variable.id] = [variable.name, variable.value ? variable.value.value : '']
+                } else {
+                    target.variables[variable.id] = [variable.name, variable.value ? variable.value.value : '']
+                }
+            }
+        }
+        target.blocks = codeResults.blocks
+        const usedTime = Date.now() - startTime
+        console.log(target.name, 'compile time:', usedTime)
     } catch (err) {
-        if (err instanceof TypeError) {
-            console.log('Error', err.stack, '\n  On compiling code: ' + start)
-            return {}
+        if (err.type === 'CompileError') {
+            if (err.node) {
+                console.log('CompileError: ', err.message + '\n  On compiling code: ' + start + ':' + err.node.line + ':' + err.node.col)
+            }
+            return null
         } else throw err
     }
 }
 
 /*
-Resources:
-info.stage.costumes[].file
-info.stage.sounds[].file
-info.sprites[]costumes[].file
-info.sprites[]sounds[].file
-info.sprites[]code.file
+    Resources:
+    info.stage.costumes[].file
+    info.stage.sounds[].file
+    info.sprites[]costumes[].file
+    info.sprites[]sounds[].file
+    info.sprites[]code.file
 */
 
 function * nameGenerator (nameSet) {
@@ -103,32 +136,20 @@ async function parseProject ({ projectInfo: proj, projectDir }) {
         return { hash, filename }
     }
 
-    function packWrite (name) {
-        if (!zip.files[WRITE_BG_FILENAME]) {
-            zip.file(WRITE_BG_FILENAME, WRITE_BG)
+    function packSvg (name) {
+        if (!zip.files[EMPTY_SVG.filename]) {
+            zip.file(EMPTY_SVG.filename, EMPTY_SVG.data)
         }
         return {
-            assetId: WRITE_BG_MD5,
-            md5ext: WRITE_BG_FILENAME,
-            dataFormat: 'svg',
+            assetId: EMPTY_SVG.hash,
+            md5ext: EMPTY_SVG.filename,
+            dataFormat: EMPTY_SVG.type,
             name,
-            rotationCenterX: 240,
-            rotationCenterY: 180
+            rotationCenterX: 0,
+            rotationCenterY: 0
         }
     }
-    function packTrans (name) {
-        if (!zip.files[TRANS_BG_FILENAME]) {
-            zip.file(TRANS_BG_FILENAME, TRANS_BG)
-        }
-        return {
-            assetId: TRANS_BG_MD5,
-            md5ext: TRANS_BG_FILENAME,
-            dataFormat: 'svg',
-            name,
-            rotationCenterX: 240,
-            rotationCenterY: 180
-        }
-    }
+
     function packEmptyAudio (name) {
         if (!zip.files[EMPTY_AUDIO.filename]) {
             zip.file(EMPTY_AUDIO.filename, EMPTY_AUDIO.data)
@@ -147,10 +168,7 @@ async function parseProject ({ projectInfo: proj, projectDir }) {
     let counter = 0
     if (stage.costumes) {
         if (stage.costumes.length === 0) {
-            if (!zip.files[WRITE_BG_FILENAME]) {
-                zip.file(WRITE_BG_FILENAME, WRITE_BG)
-            }
-            project.targets[0].costumes.push(packWrite('Background ' + (counter++)))
+            project.targets[0].costumes.push(packSvg('Background ' + (counter++)))
         } else {
             for (const costume of stage.costumes) {
                 if (costume.file) {
@@ -163,19 +181,19 @@ async function parseProject ({ projectInfo: proj, projectDir }) {
                         })
                     )
                 } else {
-                    if (!zip.files[TRANS_BG_FILENAME]) {
-                        zip.file(TRANS_BG_FILENAME, TRANS_BG_MD5)
-                    }
-                    project.targets[0].costumes.push(packWrite('Background ' + (counter++)))
+                    project.targets[0].costumes.push(packSvg('Background ' + (counter++)))
                 }
             }
         }
     } else {
-        if (!zip.files[WRITE_BG_FILENAME]) {
-            zip.file(WRITE_BG_FILENAME, WRITE_BG)
-        }
-        project.targets[0].costumes.push(packWrite('Background ' + (counter++)))
+        project.targets[0].costumes.push(packSvg('Background ' + (counter++)))
     }
+
+    if (stage.code && stage.code.file) {
+        console.log('WARN: Code feature are work in progress, your code will not be compiled.')
+        await complieCode(path.resolve(projectDir, stage.code.file), project.targets[0])
+    }
+
     // Sprites
     if (sprites && sprites.length > 0) {
         const nameSet = new Set()
@@ -193,7 +211,8 @@ async function parseProject ({ projectInfo: proj, projectDir }) {
                 target.y = sprite.pos.y || 0
             }
             if (sprite.code && sprite.code.file) {
-                target.blocks = (await complieCode(path.resolve(projectDir, sprite.code.file))).blocks
+                console.log('WARN: Code feature are work in progress, your code will not be compiled.')
+                await complieCode(path.resolve(projectDir, sprite.code.file), target, project.targets[0])
             }
             counter = 0
             if (sprite.costumes) {
@@ -208,9 +227,11 @@ async function parseProject ({ projectInfo: proj, projectDir }) {
                             })
                         )
                     } else {
-                        project.targets[0].costumes.push(packTrans('Costume ' + (counter++)))
+                        target.costumes.push(packSvg('Costume ' + (counter++)))
                     }
                 }
+            } else {
+                target.costumes.push(packSvg('Costume ' + (counter++)))
             }
             counter = 0
             if (sprite.sounds) {
@@ -234,12 +255,6 @@ async function parseProject ({ projectInfo: proj, projectDir }) {
     }
 
     zip.file('project.json', JSON.stringify(project))
-
-    console.log(
-        util.formatWithOptions({ colors: true, depth: 10 },
-            project
-        )
-    )
     return zip.generateAsync({ type: 'uint8array' })
 }
 

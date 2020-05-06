@@ -5,6 +5,10 @@
  */
 const InputType = {
     /**
+     * 2, For compiler use.
+     */
+    Boolean: 2,
+    /**
      * 4
      */
     Number: 4,

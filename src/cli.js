@@ -1,7 +1,10 @@
-const ss = require('../dist')
+let ss
 const path = require('path')
 const args = process.argv.slice(2)
 const fs = require('fs')
+
+if (fs.existsSync(path.join(__dirname, './index.js'))) ss = require('./index')
+else ss = require('../dist')
 
 function log (...args) { console.log(...args) }
 

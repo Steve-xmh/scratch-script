@@ -8,9 +8,9 @@ module.exports = {
     blocks: [
         {
             name: 'say',
-            opcode: 'looks_sayforsecs',
+            opcode: 'looks_say',
             type: BlockType.Block,
-            inputs: [{
+            args: [{
                 name: 'MESSAGE',
                 type: InputType.String
             }]
@@ -18,7 +18,7 @@ module.exports = {
             name: 'sayFor',
             opcode: 'looks_sayforsecs',
             type: BlockType.Block,
-            inputs: [{
+            args: [{
                 name: 'MESSAGE',
                 type: InputType.String
             }, {
