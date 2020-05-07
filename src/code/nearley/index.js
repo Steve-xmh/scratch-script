@@ -1,4 +1,4 @@
-// Generated automatically by nearley, version 2.19.1
+// Generated automatically by nearley, version 2.19.3
 // http://github.com/Hardmath123/nearley
 (function () {
 function id(x) { return x[0]; }
@@ -7,7 +7,7 @@ const moo = require("moo")
 const lexer = moo.compile([
 
     {type: "COMMENT", match: /\/\*[\W\w]*?\*\//, value: x => x.slice(2, -3)},
-    {type: "COMMENT", match: /\/{2}(?:.*)$/, value: x => x.slice(2)},
+    {type: "COMMENT", match: /\/{2}(?:.*?)\n?$/, value: x => x.slice(2)},
 
     {type: "SPACE", match: /\s+/, lineBreaks: true},
     {type: "DELIMITER", match: ";"},
@@ -38,6 +38,7 @@ const lexer = moo.compile([
     {type: "KW_LET", match: "let"},
     {type: "KW_WHEN", match: "when"},
     {type: "KW_DEFINE", match: "define"},
+    {type: "KW_ATONCE", match: "atonce"},
     {type: "KW_END", match: "end"},
     {type: "KW_WHILE", match: "while"},
     {type: "KW_FOREVER", match: "forever"},
@@ -107,41 +108,45 @@ var grammar = {
             listeners: d[1].filter(ast => ast.type === "EventExpression"),
             procedures: d[1].filter(ast => ast.type === "FunctionDefinition"),
             variables: d[1].filter(ast => ast.type === "VariableDefinition"),
-            usings: d[1].filter(ast => ast.type === "UsingStatement").map(v => v.file)
+            usings: d[1].filter(ast => ast.type === "UsingStatement")
         }) },
-    {"name": "_Program", "symbols": ["_Program", "Delimiter", "OutsideStatement"], "postprocess":  d => {
-            const r = d[0].map(v => v)
+    {"name": "_Program", "symbols": ["OutsideStatement"]},
+    {"name": "_Program$subexpression$1", "symbols": ["_", {"literal":";"}, "_"]},
+    {"name": "_Program$subexpression$1", "symbols": ["__"]},
+    {"name": "_Program", "symbols": ["_Program", "_Program$subexpression$1", "OutsideStatement"], "postprocess":  d => {
+            const r = d[0].slice()
             r.push(d[2])
             return r
         } },
-    {"name": "_Program", "symbols": ["OutsideStatement"], "postprocess": v => [v[0]]},
+    {"name": "OutsideStatement", "symbols": ["Comment"], "postprocess": id},
     {"name": "OutsideStatement", "symbols": ["UsingStatement"], "postprocess": id},
     {"name": "OutsideStatement", "symbols": ["VariableDefinition"], "postprocess": id},
     {"name": "OutsideStatement", "symbols": ["FunctionDefinition"], "postprocess": id},
     {"name": "OutsideStatement", "symbols": ["EventListener"], "postprocess": id},
-    {"name": "OutsideStatement", "symbols": ["Comment"], "postprocess": id},
-    {"name": "UsingStatement", "symbols": [(lexer.has("KW_USING") ? {type: "KW_USING"} : KW_USING), "_", (lexer.has("STRING") ? {type: "STRING"} : STRING)], "postprocess":  d => ({
+    {"name": "UsingStatement", "symbols": [{"literal":"using"}, "__", (lexer.has("STRING") ? {type: "STRING"} : STRING)], "postprocess":  d => ({
             type: "UsingStatement",
             file: d[2].value,
             line: d[0].line,
             col: d[0].col
         }) },
-    {"name": "Block", "symbols": ["_", "_Block"], "postprocess": d => d[1]},
+    {"name": "Block", "symbols": ["_", "_Block", "_"], "postprocess": d => d[1]},
     {"name": "Block", "symbols": ["_"], "postprocess": v => []},
     {"name": "_Block", "symbols": ["Statement"], "postprocess": d => [d[0]]},
     {"name": "_Block", "symbols": ["_Block", "_", "Statement"], "postprocess":  d => {
-            const r = d[0].map(v => v)
+            const r = d[0].slice()
             r.push(d[2])
             return r
         } },
-    {"name": "Statement", "symbols": ["_Statement", "Delimiter"], "postprocess": id},
-    {"name": "_Statement", "symbols": ["FunctionCall"], "postprocess": id},
-    {"name": "_Statement", "symbols": ["SetVariable"], "postprocess": id},
+    {"name": "Statement$subexpression$1", "symbols": ["_", {"literal":";"}]},
+    {"name": "Statement$subexpression$1", "symbols": []},
+    {"name": "Statement", "symbols": ["_Statement", "Statement$subexpression$1"], "postprocess": id},
+    {"name": "_Statement", "symbols": ["Comment"], "postprocess": id},
     {"name": "_Statement", "symbols": ["RepeatCondition"], "postprocess": id},
     {"name": "_Statement", "symbols": ["WhileCondition"], "postprocess": id},
     {"name": "_Statement", "symbols": ["IfCondition"], "postprocess": id},
-    {"name": "_Statement", "symbols": ["Comment"], "postprocess": id},
-    {"name": "EventListener", "symbols": [(lexer.has("KW_WHEN") ? {type: "KW_WHEN"} : KW_WHEN), "__", (lexer.has("BLOCKIDEN") ? {type: "BLOCKIDEN"} : BLOCKIDEN), "_", {"literal":"("}, "_", "ArgList", "_", {"literal":")"}, "_", "FunctionBody"], "postprocess":  (d, pos, reject) => {
+    {"name": "_Statement", "symbols": ["SetVariable"], "postprocess": id},
+    {"name": "_Statement", "symbols": ["FunctionCall"], "postprocess": id},
+    {"name": "EventListener", "symbols": [{"literal":"when"}, "__", (lexer.has("BLOCKIDEN") ? {type: "BLOCKIDEN"} : BLOCKIDEN), "_", {"literal":"("}, "_", "ArgList", "_", {"literal":")"}, "_", "FunctionBody"], "postprocess":  (d, pos, reject) => {
             return {
                 type: "EventExpression",
                 name: d[2].value,
@@ -151,14 +156,17 @@ var grammar = {
                 col: d[0].col
             }
         } },
-    {"name": "FunctionDefinition", "symbols": [(lexer.has("KW_DEFINE") ? {type: "KW_DEFINE"} : KW_DEFINE), "__", (lexer.has("IDEN") ? {type: "IDEN"} : IDEN), "_", {"literal":"("}, "_", "ParamList", "_", {"literal":")"}, "_", "FunctionBody"], "postprocess":  (d, pos, reject) => {
+    {"name": "FunctionDefinition$subexpression$1", "symbols": [(lexer.has("KW_ATONCE") ? {type: "KW_ATONCE"} : KW_ATONCE), "__"]},
+    {"name": "FunctionDefinition$subexpression$1", "symbols": []},
+    {"name": "FunctionDefinition", "symbols": ["FunctionDefinition$subexpression$1", (lexer.has("KW_DEFINE") ? {type: "KW_DEFINE"} : KW_DEFINE), "__", (lexer.has("IDEN") ? {type: "IDEN"} : IDEN), "_", {"literal":"("}, "_", "ParamList", "_", {"literal":")"}, "_", "FunctionBody"], "postprocess":  d => {
             return {
                 type: "FunctionDefinition",
-                name: d[2].value,
-                params: d[6],
-                body: d[10],
-                line: d[0].line,
-                col: d[0].col
+                warp: !!d[0][0],
+                name: d[3].value,
+                params: d[7],
+                body: d[11],
+                line: d[0][0] ? d[0][0].line : d[1].line,
+                col: d[0][0] ?d[0][0].col : d[1].line
             }
         } },
     {"name": "FunctionCall$subexpression$1", "symbols": [(lexer.has("BLOCKIDEN") ? {type: "BLOCKIDEN"} : BLOCKIDEN)]},
@@ -302,10 +310,10 @@ var grammar = {
             },
     {"name": "ArgList", "symbols": ["ExpList"], "postprocess": id},
     {"name": "InCases", "symbols": [], "postprocess": d => []},
-    {"name": "InCases", "symbols": ["_", "_InCases", "_", (lexer.has("KW_END") ? {type: "KW_END"} : KW_END), "_"], "postprocess": d => Object.fromEntries(d[0])},
+    {"name": "InCases", "symbols": ["_", "_InCases"], "postprocess": d => Object.fromEntries(d[0])},
     {"name": "_InCases", "symbols": ["InCase"]},
     {"name": "_InCases", "symbols": ["_InCases", "__", "InCase"], "postprocess": d => {const t = Array.from(d[0]); t.push(d[2]); return t }},
-    {"name": "InCase", "symbols": [(lexer.has("KW_IN") ? {type: "KW_IN"} : KW_IN), "__", "Constant", "__", "FunctionBody"], "postprocess":  d => [d[2].value, {
+    {"name": "InCase", "symbols": [{"literal":"in"}, "__", "Constant", "__", "FunctionBody"], "postprocess":  d => [d[2].value, {
             type: "CaseBody",
             name: d[2],
             body: d[4],
@@ -314,10 +322,10 @@ var grammar = {
         }] },
     {"name": "ParamList", "symbols": [], "postprocess": () => []},
     {"name": "ParamList", "symbols": ["Param"]},
-    {"name": "ParamList", "symbols": ["ParamList", "_", (lexer.has("COMMA") ? {type: "COMMA"} : COMMA), "_", "Param"], "postprocess": d => { const t = d[0]; t.push(d[4]); return t }},
-    {"name": "Param$ebnf$1$subexpression$1$subexpression$1", "symbols": [(lexer.has("KW_STRING") ? {type: "KW_STRING"} : KW_STRING)]},
-    {"name": "Param$ebnf$1$subexpression$1$subexpression$1", "symbols": [(lexer.has("KW_NUMBER") ? {type: "KW_NUMBER"} : KW_NUMBER)]},
-    {"name": "Param$ebnf$1$subexpression$1$subexpression$1", "symbols": [(lexer.has("KW_BOOL") ? {type: "KW_BOOL"} : KW_BOOL)]},
+    {"name": "ParamList", "symbols": ["ParamList", "_", {"literal":","}, "_", "Param"], "postprocess": d => { const t = d[0]; t.push(d[4]); return t }},
+    {"name": "Param$ebnf$1$subexpression$1$subexpression$1", "symbols": [{"literal":"string"}]},
+    {"name": "Param$ebnf$1$subexpression$1$subexpression$1", "symbols": [{"literal":"number"}]},
+    {"name": "Param$ebnf$1$subexpression$1$subexpression$1", "symbols": [{"literal":"bool"}]},
     {"name": "Param$ebnf$1$subexpression$1", "symbols": ["_", {"literal":":"}, "_", "Param$ebnf$1$subexpression$1$subexpression$1"]},
     {"name": "Param$ebnf$1", "symbols": ["Param$ebnf$1$subexpression$1"], "postprocess": id},
     {"name": "Param$ebnf$1", "symbols": [], "postprocess": function(d) {return null;}},
@@ -328,7 +336,7 @@ var grammar = {
             line: d[0].line,
             col: d[0].col
         }) },
-    {"name": "FunctionBody", "symbols": [(lexer.has("LCB") ? {type: "LCB"} : LCB), "Block", (lexer.has("RCB") ? {type: "RCB"} : RCB)], "postprocess": d => d[1]},
+    {"name": "FunctionBody", "symbols": [{"literal":"{"}, "Block", {"literal":"}"}], "postprocess": d => d[1]},
     {"name": "SetVariable", "symbols": [(lexer.has("IDEN") ? {type: "IDEN"} : IDEN), "_", {"literal":"="}, "_", "Expression"], "postprocess":  d => ({
             type: "FunctionCall",
             name: "data.setVar",
@@ -339,8 +347,8 @@ var grammar = {
             line: d[0].line,
             col: d[0].col
         }) },
-    {"name": "ExpList", "symbols": ["ExpList", "_", (lexer.has("COMMA") ? {type: "COMMA"} : COMMA), "_", "Expression"], "postprocess":  d => {
-            const r = d[0].map(v => v)
+    {"name": "ExpList", "symbols": ["ExpList", "_", {"literal":","}, "_", "Expression"], "postprocess":  d => {
+            const r = d[0].slice()
             r.push(d[4])
             return r
         } },
@@ -367,10 +375,15 @@ var grammar = {
     {"name": "ExpProduct", "symbols": [{"literal":"!"}, "_", "ExpSum"], "postprocess": d => tryCalculate([d[2],, d[0]])},
     {"name": "ExpProduct", "symbols": ["Atom"], "postprocess": id},
     {"name": "Atom", "symbols": [], "postprocess": id},
-    {"name": "Atom", "symbols": ["FunctionCall"], "postprocess": id},
-    {"name": "Atom$subexpression$1", "symbols": [(lexer.has("BLOCKIDEN") ? {type: "BLOCKIDEN"} : BLOCKIDEN)]},
-    {"name": "Atom$subexpression$1", "symbols": [(lexer.has("IDEN") ? {type: "IDEN"} : IDEN)]},
-    {"name": "Atom", "symbols": ["Atom$subexpression$1"], "postprocess":  ([[name]]) => ({
+    {"name": "Atom", "symbols": [(lexer.has("BLOCKIDEN") ? {type: "BLOCKIDEN"} : BLOCKIDEN)], "postprocess":  ([name]) => ({
+            type: "FunctionCall",
+            name: name.value,
+            args: [],
+            cases: [],
+            line: name.line,
+            col: name.col
+        }) },
+    {"name": "Atom", "symbols": [(lexer.has("IDEN") ? {type: "IDEN"} : IDEN)], "postprocess":  ([name]) => ({
             type: "Literal",
             name: name.value,
             line: name.line,
@@ -378,11 +391,15 @@ var grammar = {
         }) },
     {"name": "Atom", "symbols": ["Constant"], "postprocess": id},
     {"name": "Atom", "symbols": ["Parenthesized"], "postprocess": id},
+    {"name": "Atom", "symbols": ["FunctionCall"], "postprocess": id},
     {"name": "ListConstant", "symbols": [{"literal":"["}, "_", "ListItems", "_", {"literal":"]"}], "postprocess": d => d[2]},
     {"name": "ListConstant", "symbols": [{"literal":"["}, "_", {"literal":"]"}], "postprocess": d => []},
-    {"name": "ListItems", "symbols": ["Constant", "_", (lexer.has("COMMA") ? {type: "COMMA"} : COMMA), "_", "ListItems"], "postprocess": d => [d[0], ...d[4]]},
-    {"name": "ListItems", "symbols": ["Constant", "_", (lexer.has("COMMA") ? {type: "COMMA"} : COMMA)], "postprocess": d => [d[0]]},
-    {"name": "ListItems", "symbols": ["Constant"]},
+    {"name": "ListItems", "symbols": ["Constant"], "postprocess": d => [d[0]]},
+    {"name": "ListItems", "symbols": ["ListItems", "_", {"literal":","}, "_", "Constant"], "postprocess":  d => {
+            const r = d[0].slice()
+            r.push(d[4])
+            return r
+        } },
     {"name": "Constant", "symbols": [(lexer.has("STRING") ? {type: "STRING"} : STRING)], "postprocess":  ([d]) => ({
             type: "Constant",
             value: d.value,
@@ -406,17 +423,17 @@ var grammar = {
             line: d.line,
             col: d.col
         }) },
+    {"name": "_", "symbols": [], "postprocess": null},
+    {"name": "_", "symbols": ["_", "Comment", "_"], "postprocess": d => d[1]},
+    {"name": "_", "symbols": [(lexer.has("SPACE") ? {type: "SPACE"} : SPACE)], "postprocess": null},
+    {"name": "__", "symbols": ["_", "Comment", "_"], "postprocess": id},
+    {"name": "__", "symbols": [(lexer.has("SPACE") ? {type: "SPACE"} : SPACE)], "postprocess": null},
     {"name": "Comment", "symbols": [(lexer.has("COMMENT") ? {type: "COMMENT"} : COMMENT)], "postprocess":  d => ({
             type: "Comment",
-            message: d[1].value,
-            line: d[1].line,
-            col: d[1].col
-        }) },
-    {"name": "Delimiter", "symbols": ["_", (lexer.has("DELIMITER") ? {type: "DELIMITER"} : DELIMITER), "_"], "postprocess": null},
-    {"name": "Delimiter", "symbols": ["__"], "postprocess": null},
-    {"name": "_", "symbols": []},
-    {"name": "_", "symbols": [(lexer.has("SPACE") ? {type: "SPACE"} : SPACE)], "postprocess": null},
-    {"name": "__", "symbols": [(lexer.has("SPACE") ? {type: "SPACE"} : SPACE)], "postprocess": null}
+            message: d[0].value,
+            line: d[0].line,
+            col: d[0].col
+        }) }
 ]
   , ParserStart: "Program"
 }

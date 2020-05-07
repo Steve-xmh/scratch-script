@@ -24,7 +24,7 @@ module.exports = {
             }]
         }, {
             name: 'changeX',
-            opcode: 'motion_changexbx',
+            opcode: 'motion_changexby',
             type: BlockType.Block,
             args: [{
                 name: 'DX',
@@ -32,12 +32,25 @@ module.exports = {
             }]
         }, {
             name: 'changeY',
-            opcode: 'motion_changexby',
+            opcode: 'motion_changeyby',
             type: BlockType.Block,
             args: [{
-                name: 'DX',
+                name: 'DY',
                 type: InputType.Number
             }]
+        }, {
+            name: 'x',
+            opcode: 'motion_xposition',
+            type: BlockType.ReporterBlock
+        }, {
+            name: 'y',
+            opcode: 'motion_yposition',
+            type: BlockType.ReporterBlock,
+            args: []
+        }, {
+            name: 'direction',
+            opcode: 'motion_direction',
+            type: BlockType.ReporterBlock
         }, {
             name: 'ifOnEdgeBounce',
             opcode: 'motion_ifonedgebounce',

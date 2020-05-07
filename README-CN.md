@@ -183,15 +183,18 @@ nameWhateverUWant
 请勿将下列关键字用于变量或函数定义。
 
 ```
-when
+bool
 define
-using
-register
+for
 forever
 in
-while
-for
+number
+register
 repeat
+string
+using
+when
+while
 ```
 
 #### 注释
@@ -377,13 +380,20 @@ for (counter in 10) {
 ```
 
 #### 自定义模块（WIP）
+
+使用 `define` 关键字作为开头，后跟一个普通的标识符并提供名称，如果需要不刷新舞台，则在 `define` 关键字前添加 `atonce` 关键字。
+
 ```
 define *Identifier*(*arguments*) {
     *Codes*
 }
+// Will not update the stage!
+atonce define *Identifier*(*arguments*) {
+    *Codes*
+}
 ```
 
-注：因为自定义模块存在类型（字符串/数字类型，布尔类型），如果仅声明了参数名称则使用字符串/数字类型作为参数类型。如果参数名后加冒号，再加入以下关键字即可指定参数类型：
+因为自定义模块存在类型（字符串/数字类型，布尔类型），如果仅声明了参数名称则使用字符串/数字类型作为参数类型。如果参数名后加冒号，再加入以下关键字即可指定参数类型：
 - `string` 字符串类型
 - `number` 数字类型
 - `bool` 布尔值类型

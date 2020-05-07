@@ -1,5 +1,4 @@
 const nearley = require('nearley')
-const grammar = nearley.Grammar.fromCompiled(require('./nearley'))
 const te = token => new TypeError(`Unknown token "${token.value}" at ${token.location.line}:${token.location.row}`)
 
 /**
@@ -85,6 +84,7 @@ const te = token => new TypeError(`Unknown token "${token.value}" at ${token.loc
  *
  * @typedef {Object} AST
  * @property {"Program"} type
+ * @property {string?} name
  * @property {EventExpression[]} listeners
  * @property {FunctionDefinition[]} procedures
  * @property {VariableDefinition[]} variables
@@ -97,21 +97,17 @@ const te = token => new TypeError(`Unknown token "${token.value}" at ${token.loc
  * @returns {AST}
  */
 function parser (src) {
+    const grammar = nearley.Grammar.fromCompiled(require('./nearley'))
     const ne = new nearley.Parser(grammar)
-    try {
-        ne.feed(src)
-    } catch (err) {
-        console.log(err)
-        throw te(err.message)
-    }
+    ne.lexer.reset()
+    ne.feed(src)
     const result = ne.finish()
     if (result.length === 0) {
-        console.log(ne)
         throw te('Unexpected end token.')
     }
     if (result.length !== 1) {
         console.log(`Warning: Parser has ${result.length} results.`)
-        // console.log(result.slice(0, 32).map(JSON.stringify))
+        // (result.slice(0, 32).map(JSON.stringify))
     }
     return result[0]
 }

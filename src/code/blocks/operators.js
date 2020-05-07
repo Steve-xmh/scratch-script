@@ -60,6 +60,17 @@ module.exports = {
             type: InputType.Number
         }]
     }, {
+        name: 'join',
+        opcode: 'operator_join',
+        type: BlockType.ReporterBlock,
+        args: [{
+            name: 'STRING1',
+            type: InputType.String
+        }, {
+            name: 'STRING2',
+            type: InputType.String
+        }]
+    }, {
         name: 'lt',
         opcode: 'operator_lt',
         args: [{

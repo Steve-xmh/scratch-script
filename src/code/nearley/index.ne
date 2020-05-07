@@ -4,7 +4,7 @@ const moo = require("moo")
 const lexer = moo.compile([
 
     {type: "COMMENT", match: /\/\*[\W\w]*?\*\//, value: x => x.slice(2, -3)},
-    {type: "COMMENT", match: /\/{2}(?:.*)$/, value: x => x.slice(2)},
+    {type: "COMMENT", match: /\/{2}(?:.*?)\n?$/, value: x => x.slice(2)},
 
     {type: "SPACE", match: /\s+/, lineBreaks: true},
     {type: "DELIMITER", match: ";"},
@@ -35,6 +35,7 @@ const lexer = moo.compile([
     {type: "KW_LET", match: "let"},
     {type: "KW_WHEN", match: "when"},
     {type: "KW_DEFINE", match: "define"},
+    {type: "KW_ATONCE", match: "atonce"},
     {type: "KW_END", match: "end"},
     {type: "KW_WHILE", match: "while"},
     {type: "KW_FOREVER", match: "forever"},
@@ -62,52 +63,53 @@ Program -> _ _Program _ {% d => ({
         listeners: d[1].filter(ast => ast.type === "EventExpression"),
         procedures: d[1].filter(ast => ast.type === "FunctionDefinition"),
         variables: d[1].filter(ast => ast.type === "VariableDefinition"),
-        usings: d[1].filter(ast => ast.type === "UsingStatement").map(v => v.file)
+        usings: d[1].filter(ast => ast.type === "UsingStatement")
     }) %}
 
-_Program -> _Program Delimiter OutsideStatement {% d => {
-        const r = d[0].map(v => v)
+_Program -> 
+    OutsideStatement
+    | _Program (_ ";" _ | __) OutsideStatement {% d => {
+        const r = d[0].slice()
         r.push(d[2])
         return r
     } %}
-    | OutsideStatement {% v => [v[0]] %}
 
 OutsideStatement ->
-    UsingStatement {% id %}
+    Comment {% id %}
+    | UsingStatement {% id %}
     | VariableDefinition {% id %}
     | FunctionDefinition {% id %}
     | EventListener {% id %}
-    | Comment {% id %}
 
-UsingStatement -> %KW_USING _ %STRING {% d => ({
+UsingStatement -> "using" __ %STRING {% d => ({
     type: "UsingStatement",
     file: d[2].value,
     line: d[0].line,
     col: d[0].col
 }) %}
 
-Block -> _ _Block {% d => d[1] %}
+Block -> _ _Block _ {% d => d[1] %}
     | _ {% v => [] %}
 
 _Block -> Statement {% d => [d[0]] %}
     | _Block _ Statement {% d => {
-        const r = d[0].map(v => v)
+        const r = d[0].slice()
         r.push(d[2])
         return r
     } %}
 
-Statement -> _Statement Delimiter {% id %}
+Statement -> _Statement (_ ";" | null) {% id %}
 
 _Statement -> 
-    FunctionCall {% id %}
-    | SetVariable {% id %}
+    Comment {% id %}
     | RepeatCondition {% id %}
     | WhileCondition {% id %}
     | IfCondition {% id %}
-    | Comment {% id %}
+    | SetVariable {% id %}
+    | FunctionCall {% id %}
 
 EventListener ->
-    %KW_WHEN __ %BLOCKIDEN _ "(" _ ArgList _ ")" _ FunctionBody
+    "when" __ %BLOCKIDEN _ "(" _ ArgList _ ")" _ FunctionBody
 {% (d, pos, reject) => {
     return {
         type: "EventExpression",
@@ -121,15 +123,16 @@ EventListener ->
 
 # define *FunctionName* (*args*)
 FunctionDefinition ->
-    %KW_DEFINE __ %IDEN _ "(" _ ParamList _ ")" _ FunctionBody
-{% (d, pos, reject) => {
+    (%KW_ATONCE __ | null) %KW_DEFINE __ %IDEN _ "(" _ ParamList _ ")" _ FunctionBody
+{% d => {
     return {
         type: "FunctionDefinition",
-        name: d[2].value,
-        params: d[6],
-        body: d[10],
-        line: d[0].line,
-        col: d[0].col
+        warp: !!d[0][0],
+        name: d[3].value,
+        params: d[7],
+        body: d[11],
+        line: d[0][0] ? d[0][0].line : d[1].line,
+        col: d[0][0] ?d[0][0].col : d[1].line
     }
 } %}
 
@@ -303,13 +306,13 @@ ArgList -> ExpList {% id %}
 # Cases
 
 InCases -> null {% d => [] %}
-    | _ _InCases _ %KW_END _ {% d => Object.fromEntries(d[0]) %}
+    | _ _InCases {% d => Object.fromEntries(d[0]) %}
 
 _InCases ->
     InCase
     | _InCases __ InCase {% d => {const t = Array.from(d[0]); t.push(d[2]); return t } %}
 
-InCase -> %KW_IN __ Constant __ FunctionBody {% d => [d[2].value, {
+InCase -> "in" __ Constant __ FunctionBody {% d => [d[2].value, {
     type: "CaseBody",
     name: d[2],
     body: d[4],
@@ -320,10 +323,10 @@ InCase -> %KW_IN __ Constant __ FunctionBody {% d => [d[2].value, {
 ParamList ->
     null {% () => [] %}
     | Param
-    | ParamList _ %COMMA _ Param {% d => { const t = d[0]; t.push(d[4]); return t } %}
+    | ParamList _ "," _ Param {% d => { const t = d[0]; t.push(d[4]); return t } %}
 
 Param ->
-    %IDEN (_ ":" _ (%KW_STRING | %KW_NUMBER | %KW_BOOL)):? {% d => ({
+    %IDEN (_ ":" _ ("string" | "number" | "bool")):? {% d => ({
         type: "Argument",
         name: d[0].value,
         argumentType: d[1] ? d[1][3][0].value : "string",
@@ -331,7 +334,7 @@ Param ->
         col: d[0].col
     }) %}
 
-FunctionBody -> %LCB Block %RCB {% d => d[1] %}
+FunctionBody -> "{" Block "}" {% d => d[1] %}
 
 SetVariable ->
     %IDEN _ "=" _ Expression
@@ -346,9 +349,9 @@ SetVariable ->
     col: d[0].col
 }) %}
 
-ExpList -> ExpList _ %COMMA _ Expression
+ExpList -> ExpList _ "," _ Expression
     {% d => {
-        const r = d[0].map(v => v)
+        const r = d[0].slice()
         r.push(d[4])
         return r
     } %}
@@ -421,8 +424,15 @@ ExpProduct ->
 
 Atom -> 
     null {% id %}
-    | FunctionCall {% id %}
-    | (%BLOCKIDEN | %IDEN) {% ([[name]]) => ({
+    | %BLOCKIDEN {% ([name]) => ({
+        type: "FunctionCall",
+        name: name.value,
+        args: [],
+        cases: [],
+        line: name.line,
+        col: name.col
+    }) %}
+    | %IDEN {% ([name]) => ({
         type: "Literal",
         name: name.value,
         line: name.line,
@@ -430,13 +440,18 @@ Atom ->
     }) %}
     | Constant {% id %}
     | Parenthesized {% id %}
+    | FunctionCall {% id %}
 
 ListConstant -> "[" _ ListItems _ "]" {% d => d[2] %}
     | "[" _ "]" {% d => [] %}
 
-ListItems -> Constant _ %COMMA _ ListItems {% d => [d[0], ...d[4]]%}
-    | Constant _ %COMMA {% d => [d[0]]%}
-    | Constant
+ListItems ->
+    Constant {% d => [d[0]]%}
+    | ListItems _ "," _ Constant {% d => {
+        const r = d[0].slice()
+        r.push(d[4])
+        return r
+    } %}
 
 Constant ->
     %STRING {% ([d]) => ({
@@ -463,16 +478,16 @@ Constant ->
         col: d.col
     }) %}
 
+_ -> null {% null %}
+    | _ Comment _ {% d => d[1] %}
+    | %SPACE {% null %}
+__ -> _ Comment _ {% id %}
+    | %SPACE {% null %}
+
 Comment -> %COMMENT
 {% d => ({
     type: "Comment",
-    message: d[1].value,
-    line: d[1].line,
-    col: d[1].col
+    message: d[0].value,
+    line: d[0].line,
+    col: d[0].col
 }) %}
-
-Delimiter -> _ %DELIMITER _  {% null %}
-    | __ {% null %}
-
-_ -> null | %SPACE {% null %}
-__ ->  %SPACE {% null %}

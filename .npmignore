@@ -1,7 +1,7 @@
 scripts/
 node_modules/
 test/
-main.html
+railroad.html
 yarn-error.log
 
 src/code

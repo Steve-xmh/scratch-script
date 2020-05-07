@@ -45,52 +45,92 @@ function createTarget (isStage = false) {
 
 const setPath = (obj, path = [''], value = undefined) => {
     let temp = obj
-    console.log(path.slice(0, -2))
     for (const key of path.slice(0, -2)) {
         temp = temp[key]
     }
     temp[path[path.length - 1]] = value
 }
 
-async function complieCode (start, target, stage = null) {
+async function complieCode (file) {
     try {
-        const startTime = Date.now()
-        const codeResults = code.generator(code.parser(await fs.readFile(start, { encoding: 'utf8' })))
-        for (const variable of codeResults.ast.variables) {
-            console.log(variable)
-            if (!variable.islocal && stage) {
-                if (variable.value instanceof Array) {
-                    const stageVar = Object.entries(stage.variables).find(v => v[1][0] === variable.name)
-                    if (stageVar) {
-                        for (const usedPath of variable.used) {
-                            setPath(codeResults.blocks, usedPath, stageVar[1])
+        const dir = path.dirname(file)
+        return await code.generator({
+            ast: await code.parser(await fs.readFile(file, { encoding: 'utf8' })),
+            async getModuleHash (use) {
+                return path.resolve(dir, use.file)
+            },
+            async askForModule (use) {
+                const modulePath = path.resolve(dir, use.file)
+                const source = await fs.readFile(modulePath, { encoding: 'utf8' })
+                try {
+                    return code.parser(source)
+                } catch (err) {
+                    if (err.type === 'CompileError') {
+                        if (err.node) {
+                            console.log('CompileError: ', err.message + '\n  On compiling code: ' + modulePath + ':' + err.node.line + ':' + err.node.col)
                         }
-                    }
-                } else {
+                        return null
+                    } else if (err.token) {
+                        console.log(`CompileError: Unknown token ${err.token.text} (${err.token.type})\n  On compiling code: ${modulePath}:${err.token.line}:${err.token.col}`)
+                        return null
+                    } else throw err
+                }
+            }
+        })
+    } catch (err) {
+        if (err.type === 'CompileError') {
+            if (err.node) {
+                console.log('CompileError: ', err.message + '\n  On compiling code: ' + file + ':' + err.node.line + ':' + err.node.col)
+            }
+            return null
+        } else if (err.token) {
+            console.log(`CompileError: Unknown token ${err.token.text} (${err.token.type})\n  On compiling code: ${file}:${err.token.line}:${err.token.col}`)
+        } else throw err
+    }
+}
+
+async function complieCodeForTarget (start, target, stage = null) {
+    try {
+        const codeResults = await complieCode(start)
+        if (!codeResults) return
+        for (const variable of codeResults.ast.variables) {
+            if (!variable.islocal && stage && target !== stage) {
+                if (variable.value instanceof Array) {
                     const stageList = Object.entries(stage.lists).find(v => v[1][0] === variable.name)
                     if (stageList) {
                         for (const usedPath of variable.used) {
                             setPath(codeResults.blocks, usedPath, stageList[1])
                         }
+                    } else {
+                        stage.lists[variable.id] = [variable.name, variable.value ? variable.value.map(v => v.value) : []]
+                    }
+                } else {
+                    const stageVar = Object.entries(stage.variables).find(v => v[1][0] === variable.name)
+                    if (stageVar) {
+                        for (const usedPath of variable.used) {
+                            setPath(codeResults.blocks, usedPath, stageVar[1])
+                        }
+                    } else {
+                        stage.variables[variable.id] = [variable.name, variable.value ? variable.value.value : '']
                     }
                 }
             } else {
                 if (variable.value instanceof Array) {
-                    target.lists[variable.id] = [variable.name, variable.value ? variable.value.value : '']
+                    target.lists[variable.id] = [variable.name, variable.value ? variable.value.map(v => v.value) : []]
                 } else {
                     target.variables[variable.id] = [variable.name, variable.value ? variable.value.value : '']
                 }
             }
         }
         target.blocks = codeResults.blocks
-        const usedTime = Date.now() - startTime
-        console.log(target.name, 'compile time:', usedTime)
     } catch (err) {
         if (err.type === 'CompileError') {
             if (err.node) {
                 console.log('CompileError: ', err.message + '\n  On compiling code: ' + start + ':' + err.node.line + ':' + err.node.col)
             }
             return null
+        } else if (err.token) {
+            console.log(`CompileError: Unknown token ${err.token.text} (${err.token.type})\n  On compiling code: ${start}:${err.token.line}:${err.token.col}`)
         } else throw err
     }
 }
@@ -166,32 +206,34 @@ async function parseProject ({ projectInfo: proj, projectDir }) {
 
     // Collage resources
     let counter = 0
-    if (stage.costumes) {
-        if (stage.costumes.length === 0) {
-            project.targets[0].costumes.push(packSvg('Background ' + (counter++)))
-        } else {
-            for (const costume of stage.costumes) {
-                if (costume.file) {
-                    const desc = await packFile(path.resolve(projectDir, costume.file))
-                    project.targets[0].costumes.push(
-                        createFileDescription({
-                            hash: desc.hash,
-                            filename: desc.filename,
-                            name: costume.name
-                        })
-                    )
-                } else {
-                    project.targets[0].costumes.push(packSvg('Background ' + (counter++)))
+    if (stage) {
+        if (stage.costumes) {
+            if (stage.costumes.length === 0) {
+                project.targets[0].costumes.push(packSvg('Background ' + (counter++)))
+            } else {
+                for (const costume of stage.costumes) {
+                    if (costume.file) {
+                        const desc = await packFile(path.resolve(projectDir, costume.file))
+                        project.targets[0].costumes.push(
+                            createFileDescription({
+                                hash: desc.hash,
+                                filename: desc.filename,
+                                name: costume.name
+                            })
+                        )
+                    } else {
+                        project.targets[0].costumes.push(packSvg('Background ' + (counter++)))
+                    }
                 }
             }
+        } else {
+            project.targets[0].costumes.push(packSvg('Background ' + (counter++)))
+        }
+        if (stage.code && stage.code.file) {
+            await complieCodeForTarget(path.resolve(projectDir, stage.code.file), project.targets[0])
         }
     } else {
         project.targets[0].costumes.push(packSvg('Background ' + (counter++)))
-    }
-
-    if (stage.code && stage.code.file) {
-        console.log('WARN: Code feature are work in progress, your code will not be compiled.')
-        await complieCode(path.resolve(projectDir, stage.code.file), project.targets[0])
     }
 
     // Sprites
@@ -211,8 +253,7 @@ async function parseProject ({ projectInfo: proj, projectDir }) {
                 target.y = sprite.pos.y || 0
             }
             if (sprite.code && sprite.code.file) {
-                console.log('WARN: Code feature are work in progress, your code will not be compiled.')
-                await complieCode(path.resolve(projectDir, sprite.code.file), target, project.targets[0])
+                await complieCodeForTarget(path.resolve(projectDir, sprite.code.file), target, project.targets[0])
             }
             counter = 0
             if (sprite.costumes) {
@@ -262,7 +303,6 @@ async function complieInNodeJS ({
     projectDir
 }) {
     const projectFile = path.join(projectDir, './project.yaml')
-    console.log(projectDir, './project.yaml', projectFile)
     if ((await fs.stat(projectFile)).isFile()) {
         const projectInfo = projectParser(await fs.readFile(projectFile, { encoding: 'utf8' }))
         return parseProject({ projectInfo, projectDir })

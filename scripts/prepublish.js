@@ -2,7 +2,7 @@ const rimraf = require('rimraf')
 const mkdirp = require('mkdirp')
 const ncc = require('@zeit/ncc')
 const path = require('path')
-const { promises: fs } = require('fs')
+const { promises: fs, existsSync } = require('fs')
 
 const rm = p => new Promise((resolve, reject) => rimraf(p, err => { if (err) { reject(err) } else { resolve() } }))
 
@@ -13,7 +13,9 @@ async function main () {
         '/test/testProject/project.yaml'
     ]
     const threads = []
-    await rm(path.resolve(__dirname, '../dist'))
+    if (existsSync(path.resolve(__dirname, '../dist'))) {
+        await rm(path.resolve(__dirname, '../dist'))
+    }
     await mkdirp(distPath)
     const result = await ncc(path.resolve(__dirname, '../src/index.js'), {
         minify: true
