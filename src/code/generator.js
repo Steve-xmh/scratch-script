@@ -139,13 +139,13 @@ const ShadowType = {
 }
 
 const ArgumentType = {
-    boolean: 'b',
+    bool: 'b',
     string: 's',
     number: 's'
 }
 
 const ArgumentDefaultValue = {
-    boolean: null,
+    bool: null,
     string: '',
     number: 0
 }
@@ -472,7 +472,7 @@ async function generator ({
             warp: node.warp,
             children: [],
             proccode: node.name + (node.params.length > 0 ? ' ' : '') +
-                    node.params.map(v => '%' + ArgumentType[v.argumentType]).join(),
+                    node.params.map(v => '%' + ArgumentType[v.argumentType]).join(' '),
             argumentids: node.params.map(v => {
                 const argBlock = helper.newBlock()
                 argBlock.block.opcode = 'argument_reporter_string_number'
