@@ -29,20 +29,43 @@ class BlockStorage {
          * @type {BlockDefinitions}
          * @private
          */
+        this._coreBlocks = {}
         this._blocks = {}
     }
 
     /**
      * @param {BlockDefinition} desc
+     * @private
      */
-    register (desc) {
+    _register (desc) {
         if (!desc || typeof desc.id !== 'string') {
             throw new Error(`Extention ${desc.id || desc.name} doesn't have a id or not exists`)
         }
-        if (this._blocks[desc.id] !== undefined) {
+        if (this._coreBlocks[desc.id] !== undefined) {
             throw new Error(`Extention ${desc.id} has been registered`)
         }
-        this._blocks[desc.id] = desc
+        this._coreBlocks[desc.id] = desc
+        return this
+    }
+
+    /**
+     * @param {BlockDefinition} desc
+     * @param {string?} rename
+     */
+    register (desc, rename = null) {
+        const registerid = rename || desc.id
+        if (!desc || typeof registerid !== 'string') {
+            throw new Error(`Extention ${registerid || desc.name} doesn't have a id or not exists`)
+        }
+        if (this._blocks[registerid] !== undefined || this._coreBlocks[registerid] !== undefined) {
+            throw new Error(`Extention ${registerid} has been registered`)
+        }
+        this._blocks[registerid] = desc
+        return this
+    }
+
+    reset () {
+        this._blocks = {}
         return this
     }
 
@@ -53,17 +76,35 @@ class BlockStorage {
      */
     getBlock (blockiden, argn = 0) {
         const [id, name] = blockiden.split('.')
-        if (!this._blocks[id]) return null
-        return this._blocks[id].blocks.find(v => v.name === name &&
-            (v.args ? (v.args.length === argn) : (argn === 0))
-        ) || null
+        if (this._blocks[id]) {
+            return this._blocks[id].blocks.find(v => v.name === name &&
+                (v.args ? (v.args.length === argn) : (argn === 0))
+            ) || null
+        } else if (this._coreBlocks[id]) {
+            return this._coreBlocks[id].blocks.find(v => v.name === name &&
+                (v.args ? (v.args.length === argn) : (argn === 0))
+            ) || null
+        } else {
+            return null
+        }
     }
 }
 
-module.exports = new BlockStorage()
-    .register(require('./events'))
-    .register(require('./motions'))
-    .register(require('./operators'))
-    .register(require('./data'))
-    .register(require('./looks'))
-    .register(require('./control'))
+BlockStorage.coreBlocks = {
+    events: require('./events'),
+    motions: require('./motions'),
+    operators: require('./operators'),
+    data: require('./data'),
+    looks: require('./looks'),
+    control: require('./control')
+}
+
+BlockStorage.createWithCoreBlocks = function () {
+    const storage = new BlockStorage()
+    for (const key in BlockStorage.coreBlocks) {
+        storage._register(BlockStorage.coreBlocks[key])
+    }
+    return storage
+}
+
+module.exports = BlockStorage

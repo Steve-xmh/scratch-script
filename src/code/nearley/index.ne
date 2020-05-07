@@ -40,6 +40,7 @@ const lexer = moo.compile([
     {type: "KW_WHILE", match: "while"},
     {type: "KW_FOREVER", match: "forever"},
     {type: "KW_REPEAT", match: "repeat"},
+    {type: "KW_REGISTER", match: "register"},
     {type: "KW_IF", match: "if"},
     {type: "KW_ELSE", match: "else"},
     {type: "KW_USING", match: "using"},
@@ -63,6 +64,7 @@ Program -> _ _Program _ {% d => ({
         listeners: d[1].filter(ast => ast.type === "EventExpression"),
         procedures: d[1].filter(ast => ast.type === "FunctionDefinition"),
         variables: d[1].filter(ast => ast.type === "VariableDefinition"),
+        registers: d[1].filter(ast => ast.type === "RegisterStatement"),
         usings: d[1].filter(ast => ast.type === "UsingStatement")
     }) %}
 
@@ -76,10 +78,19 @@ _Program ->
 
 OutsideStatement ->
     Comment {% id %}
+    | RegisterStatement {% id %}
     | UsingStatement {% id %}
     | VariableDefinition {% id %}
     | FunctionDefinition {% id %}
     | EventListener {% id %}
+
+RegisterStatement -> "register" __ %STRING (__ "as" __ %IDEN | null) {% d => ({
+    type: "RegisterStatement",
+    file: d[2].value,
+    rename: d[3].length === 4 ? d[3][3].value : null,
+    line: d[0].line,
+    col: d[0].col
+}) %}
 
 UsingStatement -> "using" __ %STRING {% d => ({
     type: "UsingStatement",
@@ -103,9 +114,9 @@ Statement -> _Statement (_ ";" | null) {% id %}
 _Statement -> 
     Comment {% id %}
     | RepeatCondition {% id %}
+    | SetVariable {% id %}
     | WhileCondition {% id %}
     | IfCondition {% id %}
-    | SetVariable {% id %}
     | FunctionCall {% id %}
 
 EventListener ->
@@ -361,9 +372,6 @@ ExpList -> ExpList _ "," _ Expression
 Expression -> ExpOr {% id %}
 
 @{%
-
-const Cast = require("./cast")
-
 function tryCalculate ([left,,sym,,right]) {
     const blocks = {
         "+": "math.add",

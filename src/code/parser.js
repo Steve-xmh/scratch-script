@@ -80,7 +80,14 @@ const te = token => new TypeError(`Unknown token "${token.value}" at ${token.loc
  * @property {number} line
  * @property {number} col
  *
- * @typedef {UsingStatement | VariableDefinition | EventExpression | FunctionCall | IfCondition | LoopExpression | Constant | Comment | Literal} Node
+ * @typedef {Object} RegisterStatement
+ * @property {"RegisterStatement"} type
+ * @property {string} file
+ * @property {string?} rename
+ * @property {number} line
+ * @property {number} col
+ *
+ * @typedef { EventExpression | FunctionCall | IfCondition | LoopExpression | Constant | Comment | Literal} Node
  *
  * @typedef {Object} AST
  * @property {"Program"} type
@@ -89,6 +96,7 @@ const te = token => new TypeError(`Unknown token "${token.value}" at ${token.loc
  * @property {FunctionDefinition[]} procedures
  * @property {VariableDefinition[]} variables
  * @property {UsingStatement[]} usings
+ * @property {RegisterStatement[]} registers
  */
 
 /**

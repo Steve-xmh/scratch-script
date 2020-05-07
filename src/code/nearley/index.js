@@ -43,6 +43,7 @@ const lexer = moo.compile([
     {type: "KW_WHILE", match: "while"},
     {type: "KW_FOREVER", match: "forever"},
     {type: "KW_REPEAT", match: "repeat"},
+    {type: "KW_REGISTER", match: "register"},
     {type: "KW_IF", match: "if"},
     {type: "KW_ELSE", match: "else"},
     {type: "KW_USING", match: "using"},
@@ -72,9 +73,6 @@ function ifCondition (d) {
 }
 
 
-
-
-const Cast = require("./cast")
 
 function tryCalculate ([left,,sym,,right]) {
     const blocks = {
@@ -108,6 +106,7 @@ var grammar = {
             listeners: d[1].filter(ast => ast.type === "EventExpression"),
             procedures: d[1].filter(ast => ast.type === "FunctionDefinition"),
             variables: d[1].filter(ast => ast.type === "VariableDefinition"),
+            registers: d[1].filter(ast => ast.type === "RegisterStatement"),
             usings: d[1].filter(ast => ast.type === "UsingStatement")
         }) },
     {"name": "_Program", "symbols": ["OutsideStatement"]},
@@ -119,10 +118,20 @@ var grammar = {
             return r
         } },
     {"name": "OutsideStatement", "symbols": ["Comment"], "postprocess": id},
+    {"name": "OutsideStatement", "symbols": ["RegisterStatement"], "postprocess": id},
     {"name": "OutsideStatement", "symbols": ["UsingStatement"], "postprocess": id},
     {"name": "OutsideStatement", "symbols": ["VariableDefinition"], "postprocess": id},
     {"name": "OutsideStatement", "symbols": ["FunctionDefinition"], "postprocess": id},
     {"name": "OutsideStatement", "symbols": ["EventListener"], "postprocess": id},
+    {"name": "RegisterStatement$subexpression$1", "symbols": ["__", {"literal":"as"}, "__", (lexer.has("IDEN") ? {type: "IDEN"} : IDEN)]},
+    {"name": "RegisterStatement$subexpression$1", "symbols": []},
+    {"name": "RegisterStatement", "symbols": [{"literal":"register"}, "__", (lexer.has("STRING") ? {type: "STRING"} : STRING), "RegisterStatement$subexpression$1"], "postprocess":  d => ({
+            type: "RegisterStatement",
+            file: d[2].value,
+            rename: d[3].length === 4 ? d[3][3].value : null,
+            line: d[0].line,
+            col: d[0].col
+        }) },
     {"name": "UsingStatement", "symbols": [{"literal":"using"}, "__", (lexer.has("STRING") ? {type: "STRING"} : STRING)], "postprocess":  d => ({
             type: "UsingStatement",
             file: d[2].value,
@@ -142,9 +151,9 @@ var grammar = {
     {"name": "Statement", "symbols": ["_Statement", "Statement$subexpression$1"], "postprocess": id},
     {"name": "_Statement", "symbols": ["Comment"], "postprocess": id},
     {"name": "_Statement", "symbols": ["RepeatCondition"], "postprocess": id},
+    {"name": "_Statement", "symbols": ["SetVariable"], "postprocess": id},
     {"name": "_Statement", "symbols": ["WhileCondition"], "postprocess": id},
     {"name": "_Statement", "symbols": ["IfCondition"], "postprocess": id},
-    {"name": "_Statement", "symbols": ["SetVariable"], "postprocess": id},
     {"name": "_Statement", "symbols": ["FunctionCall"], "postprocess": id},
     {"name": "EventListener", "symbols": [{"literal":"when"}, "__", (lexer.has("BLOCKIDEN") ? {type: "BLOCKIDEN"} : BLOCKIDEN), "_", {"literal":"("}, "_", "ArgList", "_", {"literal":")"}, "_", "FunctionBody"], "postprocess":  (d, pos, reject) => {
             return {

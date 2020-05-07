@@ -7,15 +7,13 @@ const { promises: fs, existsSync } = require('fs')
 const rm = p => new Promise((resolve, reject) => rimraf(p, err => { if (err) { reject(err) } else { resolve() } }))
 
 async function main () {
-    const distPath = path.resolve(__dirname, '../dist')
+    const distPath = path.resolve(__dirname, '../build')
     const ignoredFiles = [
         '/test/project.json',
         '/test/testProject/project.yaml'
     ]
     const threads = []
-    if (existsSync(path.resolve(__dirname, '../dist'))) {
-        await rm(path.resolve(__dirname, '../dist'))
-    }
+    if (existsSync(distPath)) await rm(distPath)
     await mkdirp(distPath)
     const result = await ncc(path.resolve(__dirname, '../src/index.js'), {
         minify: true

@@ -321,21 +321,21 @@ if(*Condition*) {
 在执行函数的下方使用多个 `in` 加一个常量值（通常为数字，代表分支的编号）用于分辨分支类型，如果达成模块要求则会进入该分支，之后将按模块的执行方式继续执行，直到到达结尾的 `}` 结束执行。
 
 ```lua
-*Cateory*.*Identifier*(*arguments*) {
-in *String or Number*
+*Cateory*.*Identifier*(*arguments*)
+in *String or Number* {
     *Code*
-in *String or NUmber*
+} in *String or Number* {
     *Code*
-...
 }
+...
+
 // Example
-ext.switch(value) {
-in 1
+ext.switch(value)
+in 1 {
     looks.say("Hello!");
-in 2
+} in 2 {
     looks.say("Bye!");
 }
-
 ```
 
 #### 无限循环
@@ -421,17 +421,29 @@ define boolArg(arg: bool) {
 
 ```
 
-#### 模块引用（WIP）
-注：文件路径必须是静态的字符串
+#### 模块引用
+
+使用 `using` 关键字后跟一个**静态**字符串，通过相对路径的方式指定模块的位置，其内的模块会被添加到现有代码内，嵌套引用的话只会引用同一个。
+
 ```C#
 using *FilePath*
 using './path/to/module.ss'
 ```
 
-#### 注册扩展（WIP）
-```
+#### 注册扩展
+
+使用 `register` 关键字后跟一个**静态**字符串指定拓展模块的文件位置，其内定义的扩展模块将可以在代码内使用，嵌套引用的话会报告编译错误。如果需要引用同名不同功能的模块，则在字符串后面再跟一个 `as` 和一个标识符代表这个模块的新 ID。同种模块的多次不同 ID 引用不会触发编译错误。
+
+扩展文件的搜索方式不光有相对目录方式，如果相对目录无法找到模块，编译器还会根据环境变量 `SCRATCHSCRIPT_INCLUDE_DIR` 的相对目录里查询，如果仍然不存在则会报告编译错误。如果你的扩展定义文件格式为 `.js`，你可以选择不写文件后缀名。
+
+```js
 register *FilePath*
 register './path/to/extension.js'
+// You can rename extension
+register './path/to/extension.js' as new_id
+// You can also register it with file path without .js extension name.
+// If your extension definition file's extention name is .js .
+register './path/to/extension'
 ```
 
 ## ScratchScript 模块定义文件结构

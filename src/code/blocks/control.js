@@ -18,8 +18,7 @@ module.exports = {
             name: 'forever',
             opcode: 'control_forever',
             type: BlockType.Block,
-            subn: 1,
-            args: []
+            subn: 1
         }, {
             name: 'while',
             opcode: 'control_while',

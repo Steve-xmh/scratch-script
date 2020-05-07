@@ -1,5 +1,5 @@
 const uid = require('./uid')
-const CoreBlocks = require('./blocks/index')
+const BlockStorage = require('./blocks/index').createWithCoreBlocks()
 const InputType = require('./inputType')
 const BlockType = require('./blockType')
 
@@ -173,6 +173,7 @@ const nonMenus = [
 ]
 
 const noModuleSupported = async () => { throw new Error('This generator doesn\'t supplied module resolve function.') }
+const noRegisterSupported = async () => { throw new Error('This generator doesn\'t supplied register function.') }
 
 /**
  * Generate blocks object from the ast.
@@ -181,8 +182,9 @@ const noModuleSupported = async () => { throw new Error('This generator doesn\'t
  * @param {Blocks?} option.blocks
  * @param {number?} option.optimizeLevel
  * @param {string?} option.thisModuleHash
- * @param {((usingStatement: import('./parser').UsingStatement) => Promise<string>)} option.getModuleHash
- * @param {((usingStatement: import('./parser').UsingStatement) => Promise<import('./parser').AST)>} option.askForModule
+ * @param {(usingStatement: import('./parser').UsingStatement) => Promise<string>} option.getModuleHash
+ * @param {(usingStatement: import('./parser').UsingStatement) => Promise<import('./parser').AST>} option.askForModule
+ * @param {(registerStatement: import('./parser').RegisterStatement) => Promise<import('./blocks').BlockD>} option.askForRegister
  * @returns {Promise<{blocks: Blocks, ast: import('./parser').AST}>} The block object.
  */
 async function generator ({
@@ -191,9 +193,11 @@ async function generator ({
     optimizeLevel = 0,
     thisModuleHash = null,
     getModuleHash = noModuleSupported,
-    askForModule = noModuleSupported
+    askForModule = noModuleSupported,
+    askForRegister = noRegisterSupported
 }) {
     const helper = new BlocksHelper(blocks, ast)
+    BlockStorage.reset()
     /**
      * @param {import('./parser').Node} node
      * @param {string?} parentId
@@ -220,7 +224,7 @@ async function generator ({
         }
         case 'EventExpression':
         {
-            const blockd = CoreBlocks.getBlock(node.name, node.args.length)
+            const blockd = BlockStorage.getBlock(node.name, node.args.length)
             if (!blockd || blockd.type !== BlockType.EventBlock) {
                 throw te(`Can't find event ${node.name} with ${node.args.length} argument${node.args.length > 1 ? 's' : ''}`, node)
             }
@@ -300,7 +304,7 @@ async function generator ({
                 callBlock.mutation.argumentids = JSON.stringify(callBlock.mutation.argumentids)
                 return callId
             }
-            const blockd = CoreBlocks.getBlock(node.name, node.args.length)
+            const blockd = BlockStorage.getBlock(node.name, node.args.length)
             if (!(blockd && [
                 BlockType.Block,
                 BlockType.ReporterBlock,
@@ -452,6 +456,14 @@ async function generator ({
         return true
     }
     if (!await tryFindAndMixModules(ast)) return null
+    // Register extentions.
+    for (const r of ast.registers) {
+        // SCRATCHSCRIPT_INCLUDE_DIR
+        if (askForRegister === noRegisterSupported) noRegisterSupported()
+        const def = await askForRegister(r)
+        if (!def) throw te(`Can't find module ${r.file}${r.rename ? ` as ${r.rename}` : ''}`, r)
+        BlockStorage.register(def, r.rename)
+    }
     // Give variables a uid for indexing.
     ast.variables.forEach(v => { v.id = uid(); if (!v.islocal) { v.used = [] } })
     // Create prototype first

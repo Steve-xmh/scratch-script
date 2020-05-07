@@ -1,8 +1,9 @@
 # ScratchScriptKit
 
-[![](https://img.shields.io/github/license/Steve-xmh/scratch-script?style=flat-square)](https://github.com/Steve-xmh/scratch-script)
-[![](https://img.shields.io/github/repo-size/Steve-xmh/scratch-script?style=flat-square)](https://github.com/Steve-xmh/scratch-script)
-[![](https://img.shields.io/bundlephobia/min/scratch-script?style=flat-square)](https://www.npmjs.com/package/scratch-script)
+[![Licence](https://img.shields.io/github/license/Steve-xmh/scratch-script?style=flat-square)](https://github.com/Steve-xmh/scratch-script/blob/master/LICENCE)
+[![Github](https://img.shields.io/github/repo-size/Steve-xmh/scratch-script?style=flat-square)](https://github.com/Steve-xmh/scratch-script)
+[![Package Version](https://img.shields.io/npm/v/scratch-script?style=flat-square)](https://github.com/Steve-xmh/scratch-script)
+[![NPM](https://img.shields.io/bundlephobia/min/scratch-script?style=flat-square)](https://www.npmjs.com/package/scratch-script)
 
 Code feature is STILL work in progress. But others (sprites or stage definition) are finished.
 

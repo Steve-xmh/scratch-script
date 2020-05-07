@@ -1,5 +1,5 @@
 
-const { promises: fs } = require('fs')
+const { promises: fs, existsSync } = require('fs')
 const path = require('path')
 const JSZip = require('jszip')
 const projectParser = require('./project/parser')
@@ -75,6 +75,25 @@ async function complieCode (file) {
                         return null
                     } else throw err
                 }
+            },
+            async askForRegister (reg) {
+                const relativeFile = path.resolve(dir, reg.file)
+                if (existsSync(relativeFile)) {
+                    return require(relativeFile)
+                }
+                if (existsSync(relativeFile + '.js')) {
+                    return require(relativeFile)
+                }
+                const envPath = process.env.SCRATCHSCRIPT_INCLUDE_DIR
+                    ? path.resolve(process.env.SCRATCHSCRIPT_INCLUDE_DIR, reg.file)
+                    : path.resolve(__dirname, reg.file)
+                if (existsSync(envPath)) {
+                    return require(relativeFile)
+                }
+                if (existsSync(envPath + '.js')) {
+                    return require(relativeFile)
+                }
+                return null
             }
         })
     } catch (err) {

@@ -1,14 +1,10 @@
 scripts/
 node_modules/
 test/
+build/
 railroad.html
 yarn-error.log
-
-src/code
-src/project
-src/complieInNodeJS.js
-src/index.js
-
+src/code/nearley/index.ne
 .eslintrc.json
 .gitignore
 yarn-error.log
