@@ -1,11 +1,11 @@
 {
   "name": "scratch-script",
-  "version": "0.1.3",
-  "description": "[WIP] An easy language to make huge scratch code more easily. ✨",
+  "version": "0.1.7",
+  "description": "[Alpha] An easy language to make huge scratch code more easily. ✨",
   "repository": "https://github.com/Steve-xmh/scratch-script",
   "main": "src/index.js",
   "bin": {
-    "ssc": "bin/ssc"
+    "ssc": "bin/ssc.js"
   },
   "scripts": {
     "test": "node bin/ssc test/testProject -o test/output.sb3",
@@ -16,30 +16,16 @@
   },
   "keywords": [
     "scratch",
-    "complier",
+    "compiler",
     "scratch-script",
+    "language",
     "programming-language"
   ],
-  "author": {
-    "name": "steve-xmh",
-    "email": "776470918@qq.com",
-    "url": "https://github.com/Steve-xmh"
-  },
-  "contributors": [
-    {
-      "name": "steve-xmh",
-      "email": "776470918@qq.com",
-      "url": "https://github.com/Steve-xmh"
-    },
-    {
-      "name": "alexcui03",
-      "email": "cuizhihui030925@outlook.com",
-      "url": "https://github.com/alexcui03"
-    }
-  ],
+  "contributors": "https://github.com/Steve-xmh/scratch-script/graphs/contributors",
   "license": "AGPL-3.0-or-later",
   "dependencies": {
     "@zeit/ncc": "0.22.1",
+    "ajv": "^6.12.2",
     "commander": "^5.1.0",
     "jszip": "^3.4.0",
     "mkdirp": "^1.0.4",
@@ -49,7 +35,6 @@
     "yaml": "^1.9.2"
   },
   "devDependencies": {
-    "ajv": "^6.12.2",
     "ava": "^3.4.0",
     "eslint": "^6.8.0",
     "eslint-config-standard": "^14.1.0",

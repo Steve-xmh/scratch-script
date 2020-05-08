@@ -97,7 +97,6 @@ function tryCalculate ([left,,sym,,right]) {
         col: left.col
     }
 }
-
 var grammar = {
     Lexer: lexer,
     ParserRules: [
