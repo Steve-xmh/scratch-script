@@ -251,7 +251,7 @@ async function generator ({
                     }
                 }
             }
-            const realArgs = args.filter(v => v.type !== InputType.Constant)
+            const realArgs = args.filter(v => v.type !== InputType.Constant && v.type !== InputType.MenuConstant)
             for (let i = 0; i < realArgs.length; i++) {
                 const arg = realArgs[i]
                 const narg = node.args[i]

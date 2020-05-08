@@ -24,6 +24,8 @@
  * @returns {BlockStorage}
  */
 
+const InputType = require('../inputType')
+
 class BlockStorage {
     constructor () {
         /**
@@ -79,11 +81,11 @@ class BlockStorage {
         const [id, name] = blockiden.split('.')
         if (this._blocks[id]) {
             return this._blocks[id].blocks.find(v => v.name === name &&
-                (v.args ? (v.args.length === argn) : (argn === 0))
+                (v.args ? (v.args.filter(v => v.type !== InputType.Constant && v.type !== InputType.MenuConstant).length === argn) : (argn === 0))
             ) || null
         } else if (this._coreBlocks[id]) {
             return this._coreBlocks[id].blocks.find(v => v.name === name &&
-                (v.args ? (v.args.length === argn) : (argn === 0))
+                (v.args ? (v.args.filter(v => v.type !== InputType.Constant && v.type !== InputType.MenuConstant).length === argn) : (argn === 0))
             ) || null
         } else {
             return null

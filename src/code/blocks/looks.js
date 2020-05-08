@@ -66,11 +66,11 @@ module.exports = {
             menuOpcode: 'looks_backdrops'
         }]
     }, {
-        name: 'nextbackdrop',
+        name: 'nextBackdrop',
         opcode: 'looks_nextbackdrop',
         type: BlockType.Block
     }, {
-        name: 'changesizeby',
+        name: 'addSize',
         opcode: 'looks_changesizeby',
         type: BlockType.Block,
         args: [{
@@ -78,7 +78,7 @@ module.exports = {
             type: InputType.Number
         }]
     }, {
-        name: 'setsizeto',
+        name: 'setSize',
         opcode: 'looks_setsizeto',
         type: BlockType.Block,
         args: [{
@@ -86,7 +86,7 @@ module.exports = {
             type: InputType.Number
         }]
     }, {
-        name: 'changeeffectby',
+        name: 'changeEffect',
         opcode: 'looks_changeeffectby',
         type: BlockType.Block,
         args: [{
@@ -94,7 +94,7 @@ module.exports = {
             type: InputType.Number
         }]
     }, {
-        name: 'seteffectto',
+        name: 'setEffect',
         opcode: 'looks_seteffectto',
         type: BlockType.Block,
         args: [{
@@ -102,15 +102,9 @@ module.exports = {
             type: InputType.Number
         }]
     }, {
-        name: 'cleargraphiceffects',
+        name: 'clearGraphicEffects',
         opcode: 'looks_cleargraphiceffects',
-        type: BlockType.Block,
-        args: [{
-            name: 'NUM',
-            type: InputType.Menu,
-            menu: i => i,
-            menuOpcode: 'math_integer'
-        }]
+        type: BlockType.Block
     }, {
         name: 'show',
         opcode: 'looks_show',
@@ -137,9 +131,7 @@ module.exports = {
         type: BlockType.Block,
         args: [{
             name: 'NUM',
-            type: InputType.Menu,
-            menu: i => i,
-            menuOpcode: 'math_integer'
+            type: InputType.Number
         }]
     }, {
         name: 'goforwardbackwardlayers',
@@ -159,12 +151,12 @@ module.exports = {
     }, {
         name: 'backdropnumbername',
         opcode: 'looks_backdropnumbername',
-        type: BlockType.Block,
+        type: BlockType.ReporterBlock,
         args: []
     }, {
         name: 'size',
         opcode: 'looks_size',
-        type: BlockType.Block,
+        type: BlockType.ReporterBlock,
         args: []
     }
     ]

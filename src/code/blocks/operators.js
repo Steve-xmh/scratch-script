@@ -98,114 +98,30 @@ module.exports = {
         opcode: 'operator_and',
         type: BlockType.BooleanReporter,
         args: [{
-            name: 'STRING1',
-            type: InputType.String
+            name: 'OPERAND1',
+            type: InputType.Boolean
         }, {
-            name: 'STRING2',
-            type: InputType.String
-        }, {
-            name: 'LETTER',
-            type: InputType.Integer
-        }, {
-            name: 'STRING',
-            type: InputType.String
-        }, {
-            name: 'STRING',
-            type: InputType.String
-        }, {
-            name: 'STRING1',
-            type: InputType.String
-        }, {
-            name: 'STRING2',
-            type: InputType.String
-        }, {
-            name: 'NUM1',
-            type: InputType.Number
-        }, {
-            name: 'NUM2',
-            type: InputType.Number
-        }, {
-            name: 'NUM',
-            type: InputType.Number
-        }, {
-            name: 'NUM',
-            type: InputType.Number
+            name: 'OPERAND2',
+            type: InputType.Boolean
         }]
     }, {
         name: 'or',
         opcode: 'operator_or',
         type: BlockType.BooleanReporter,
         args: [{
-            name: 'STRING1',
-            type: InputType.String
+            name: 'OPERAND1',
+            type: InputType.Boolean
         }, {
-            name: 'STRING2',
-            type: InputType.String
-        }, {
-            name: 'LETTER',
-            type: InputType.Integer
-        }, {
-            name: 'STRING',
-            type: InputType.String
-        }, {
-            name: 'STRING',
-            type: InputType.String
-        }, {
-            name: 'STRING1',
-            type: InputType.String
-        }, {
-            name: 'STRING2',
-            type: InputType.String
-        }, {
-            name: 'NUM1',
-            type: InputType.Number
-        }, {
-            name: 'NUM2',
-            type: InputType.Number
-        }, {
-            name: 'NUM',
-            type: InputType.Number
-        }, {
-            name: 'NUM',
-            type: InputType.Number
+            name: 'OPERAND2',
+            type: InputType.Boolean
         }]
     }, {
         name: 'not',
         opcode: 'operator_not',
         type: BlockType.BooleanReporter,
         args: [{
-            name: 'STRING1',
-            type: InputType.String
-        }, {
-            name: 'STRING2',
-            type: InputType.String
-        }, {
-            name: 'LETTER',
-            type: InputType.Integer
-        }, {
-            name: 'STRING',
-            type: InputType.String
-        }, {
-            name: 'STRING',
-            type: InputType.String
-        }, {
-            name: 'STRING1',
-            type: InputType.String
-        }, {
-            name: 'STRING2',
-            type: InputType.String
-        }, {
-            name: 'NUM1',
-            type: InputType.Number
-        }, {
-            name: 'NUM2',
-            type: InputType.Number
-        }, {
-            name: 'NUM',
-            type: InputType.Number
-        }, {
-            name: 'NUM',
-            type: InputType.Number
+            name: 'OPERAND',
+            type: InputType.Boolean
         }]
     }, {
         name: 'join',
@@ -274,18 +190,6 @@ module.exports = {
         args: [{
             name: 'OPERATOR',
             type: InputType.Menu
-        }, {
-            name: 'NUM',
-            type: InputType.Number
-        }]
-    }, {
-        name: 'abs',
-        opcode: 'operator_mathop',
-        type: BlockType.ReporterBlock,
-        args: [{
-            name: 'OPERATOR',
-            type: InputType.MenuConstant,
-            value: 'abs'
         }, {
             name: 'NUM',
             type: InputType.Number

@@ -2,7 +2,7 @@
 
 一个简约的玩具脚本语言工具包，用于将 Scratch 工程规模化和代码化。
 
-[English](./README.md)
+Chinese 中文 [English](./README.md)
 
 ScratchScript 示例：
 ```lua
