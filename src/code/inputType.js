@@ -51,7 +51,15 @@ const InputType = {
     /**
      * 20
      */
-    Menu: 20
+    Menu: 20,
+    /**
+     * 30
+     */
+    Constant: 30,
+    /**
+     * 31
+     */
+    MenuConstant: 31
 }
 
 module.exports = InputType

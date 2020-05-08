@@ -3,7 +3,63 @@ const BlockStorage = require('./blocks/index').createWithCoreBlocks()
 const InputType = require('./inputType')
 const BlockType = require('./blockType')
 
-/* SUBSTACK + num */
+/**
+ * @enum {ShadowType}
+ */
+const ShadowType = {
+    /**
+     * 1, Which will move with parent block when draging
+     */
+    SameShadow: 1,
+    /**
+     * 2
+     */
+    NoShadow: 2,
+    /**
+     * 3
+     */
+    DifferentShadow: 3
+}
+
+const ArgumentType = {
+    bool: 'b',
+    string: 's',
+    number: 's'
+}
+
+const ArgumentDefaultValue = {
+    bool: null,
+    string: '',
+    number: 0
+}
+
+const DefaultValues = {
+    [InputType.Boolean]: null,
+    [InputType.Broadcast]: null,
+    [InputType.List]: null,
+    [InputType.Menu]: null,
+    [InputType.Variable]: null,
+    [InputType.Color]: '#000000',
+    [InputType.String]: '',
+    [InputType.Integer]: 0,
+    [InputType.PositionInteger]: 0,
+    [InputType.PositiveNumber]: 0,
+    [InputType.Number]: 0,
+    // For procedure block
+    string: InputType.String,
+    number: InputType.Number,
+    bool: InputType.Boolean
+}
+
+const nonMenus = [
+    InputType.Number,
+    InputType.Angle,
+    InputType.String,
+    InputType.PositionInteger,
+    InputType.PositiveNumber,
+    InputType.Color,
+    InputType.Integer
+]
 
 /**
  *
@@ -56,7 +112,7 @@ class BlocksHelper {
      * @returns {Block}
      */
     getTopBlock (block) {
-        let temp = this._blocks[block.parent]
+        let temp = block
         while (temp && temp.parent !== null) {
             temp = this._blocks[temp.parent]
         }
@@ -65,7 +121,7 @@ class BlocksHelper {
 
     getProtoBlock (block) {
         const top = this.getTopBlock(block)
-        if (top.opcode === 'procedures_definition') {
+        if (top && top.opcode === 'procedures_definition') {
             return this._blocks[top.inputs.custom_block[1]] || null
         }
         return null
@@ -120,36 +176,6 @@ class BlocksHelper {
     }
 }
 
-/**
- * @enum {ShadowType}
- */
-const ShadowType = {
-    /**
-     * 1, Which will move with parent block when draging
-     */
-    SameShadow: 1,
-    /**
-     * 2
-     */
-    NoShadow: 2,
-    /**
-     * 3
-     */
-    DifferentShadow: 3
-}
-
-const ArgumentType = {
-    bool: 'b',
-    string: 's',
-    number: 's'
-}
-
-const ArgumentDefaultValue = {
-    bool: null,
-    string: '',
-    number: 0
-}
-
 class CompileError extends TypeError {
     constructor (msg, node) {
         super(msg)
@@ -159,19 +185,6 @@ class CompileError extends TypeError {
 }
 
 const te = (msg, node) => new CompileError(msg, node)
-
-const substack = num => `SUBSTACK${num > 1 ? num : ''}`
-
-const nonMenus = [
-    InputType.Number,
-    InputType.Angle,
-    InputType.String,
-    InputType.PositionInteger,
-    InputType.PositiveNumber,
-    InputType.Color,
-    InputType.Integer
-]
-
 const noModuleSupported = async () => { throw new Error('This generator doesn\'t supplied module resolve function.') }
 const noRegisterSupported = async () => { throw new Error('This generator doesn\'t supplied register function.') }
 
@@ -204,6 +217,105 @@ async function generator ({
      * @returns {string | import('./parser').Constant} The block's id
      */
     function generate (node, parentId = null) {
+        /**
+         * @param {import('./parser').Node} node
+         * @param {{block: Block, id: string}} block
+         * @param {import('./blocks').ArgumentD[]} args
+         * @param {string?} parentId
+         */
+        function addArgumentsToBlock (node, block, args, parentId = null) {
+            if (!args || args.length === 0) return
+            const constantArgs = args.filter(v => [InputType.Constant, InputType.MenuConstant].includes(v.type))
+            for (let i = 0; i < constantArgs.length; i++) {
+                const arg = constantArgs[i]
+                if (arg.type === InputType.Constant) {
+                    if (typeof arg.value === 'string') {
+                        block.block.inputs[arg.name] = [ShadowType.SameShadow, [InputType.String, arg.value]]
+                    } else if (typeof arg.value === 'number') {
+                        block.block.inputs[arg.name] = [ShadowType.SameShadow, [InputType.Number, arg.value]]
+                    } else if (arg.value instanceof Array) {
+                        block.block.inputs[arg.name] = [ShadowType.SameShadow, arg.value]
+                    } else {
+                        console.log(`WARN: Can't add ${arg.name} value.`)
+                    }
+                } else { // Menu Constant
+                    if ('menuOpcode' in arg) {
+                        const menuBlock = helper.newBlock()
+                        menuBlock.block.opcode = arg.menuOpcode
+                        menuBlock.block.parent = block.id
+                        menuBlock.block.shadow = true
+                        menuBlock.block.fields[arg.name] = [arg.value, null]
+                        block.block.inputs[arg.name] = [ShadowType.SameShadow, menuBlock.id]
+                    } else {
+                        block.block.fields[arg.name] = [arg.value, null]
+                    }
+                }
+            }
+            const realArgs = args.filter(v => v.type !== InputType.Constant)
+            for (let i = 0; i < realArgs.length; i++) {
+                const arg = realArgs[i]
+                const narg = node.args[i]
+                const defaultValue = DefaultValues[arg.type]
+                if (narg.type === 'Constant') {
+                    if (nonMenus.includes(arg.type)) {
+                        block.block.inputs[arg.name] = [ShadowType.SameShadow, [arg.type, narg.value]]
+                    } else {
+                        // So we think it's a menu
+                        if (narg.type !== 'Constant') throw te(`Can't use non-constant to argument ${i} in block ${node.name}`, narg)
+                        if (arg.type === InputType.Variable) {
+                            const variable = ast.variables.find(v => v.name === narg.value && !(v.value instanceof Array))
+                            if (!variable) throw te(`Undefined variable ${narg.value}`, narg)
+                            if (!variable.islocal) variable.used.push([parentId, 'fields', arg.name, '1'])
+                            block.block.fields[arg.name] = [variable.name, variable.id]
+                        } else if (arg.type === InputType.List) {
+                            const variable = ast.variables.find(v => v.name === narg.value && (v.value instanceof Array))
+                            if (!variable) throw te(`Undefined list ${narg.value}`, narg)
+                            if (!variable.islocal) variable.used.push([parentId, 'fields', arg.name, '1'])
+                            block.block.fields[arg.name] = [variable.name, variable.id]
+                        } else if (arg.type === InputType.Menu) {
+                            if (arg.menuOpcode) {
+                                const menuBlock = helper.newBlock()
+                                menuBlock.block.opcode = arg.menuOpcode
+                                menuBlock.block.parent = block.id
+                                block.block.inputs[arg.name] = [ShadowType.SameShadow, menuBlock.id]
+                                menuBlock.block.fields[arg.name] = [arg.menu ? arg.menu(narg) : narg.value, null]
+                            } else {
+                                block.block.fields[arg.name] = [arg.menu ? arg.menu(narg) : narg.value, null]
+                            }
+                        }
+                    }
+                } else {
+                    const subBlock = generate(narg, parentId)
+                    if (typeof subBlock !== 'string') {
+                        // It is constants, or array (variable or list)
+                        if (subBlock instanceof Array) {
+                            if (defaultValue === null) {
+                                block.block.inputs[arg.name] = [ShadowType.DifferentShadow, subBlock, [arg.type, defaultValue]]
+                            } else {
+                                block.block.inputs[arg.name] = [ShadowType.SameShadow, subBlock]
+                            }
+                        } else if (nonMenus.includes(arg.type)) {
+                            block.block.inputs[arg.name] = [ShadowType.SameShadow, [arg.type, narg.value]]
+                        } else {
+                            // So we think it's a menu
+                            if (arg.type === InputType.Variable) {
+                                if (narg.type !== 'Constant') throw te(`Can't use non-constant to argument ${i} in block ${node.name}`, narg)
+                                const variable = ast.variables.find(v => v.name === narg.value)
+                                if (!variable) throw te(`Undefined variable ${narg.value}`, narg)
+                                if (!variable.islocal) variable.used.push([parentId, 'fields', arg.name, '1', '2'])
+                                block.block.fields[arg.name] = [InputType.Variable, variable.name, variable.id]
+                            }
+                        }
+                    } else {
+                        if (defaultValue === null) {
+                            block.block.inputs[arg.name] = [ShadowType.SameShadow, subBlock]
+                        } else {
+                            block.block.inputs[arg.name] = [ShadowType.DifferentShadow, subBlock, [arg.type, defaultValue]]
+                        }
+                    }
+                }
+            }
+        }
         switch (node.type) {
         case 'FunctionDefinition':
         {
@@ -224,7 +336,7 @@ async function generator ({
         }
         case 'EventExpression':
         {
-            const blockd = BlockStorage.getBlock(node.name, node.args.length)
+            const blockd = BlockStorage.getBlock(node.name, node.args.filter(v => v.type !== InputType.Constant).length)
             if (!blockd || blockd.type !== BlockType.EventBlock) {
                 throw te(`Can't find event ${node.name} with ${node.args.length} argument${node.args.length > 1 ? 's' : ''}`, node)
             }
@@ -247,27 +359,11 @@ async function generator ({
                     }
                 }
             }
+            addArgumentsToBlock(node, block, blockd.args, parentId)
             return evtBlock.id
         }
         case 'FunctionCall':
         {
-            const defaultValues = {
-                [InputType.Boolean]: null,
-                [InputType.Broadcast]: null,
-                [InputType.List]: null,
-                [InputType.Menu]: null,
-                [InputType.Variable]: null,
-                [InputType.Color]: '#000000',
-                [InputType.String]: '',
-                [InputType.Integer]: 0,
-                [InputType.PositionInteger]: 0,
-                [InputType.PositiveNumber]: 0,
-                [InputType.Number]: 0,
-                // For procedure block
-                string: InputType.String,
-                number: InputType.Number,
-                bool: InputType.Boolean
-            }
             // Check if it's procedure block
             const procNode = ast.procedures.find(v =>
                 v.name === node.name &&
@@ -286,8 +382,8 @@ async function generator ({
                     argumentids: protoBlock.mutation.argumentids
                 }
                 callBlock.mutation.argumentids.forEach((argid, i) => {
-                    const valueType = defaultValues[procNode.params[i].argumentType]
-                    const defaultValue = defaultValues[valueType]
+                    const valueType = DefaultValues[procNode.params[i].argumentType]
+                    const defaultValue = DefaultValues[valueType]
                     if (node.args[i].type !== 'Constant') {
                         const subBlock = generate(node.args[i], callId)
                         if (subBlock instanceof Array) {
@@ -327,58 +423,11 @@ async function generator ({
                 const block = funcBlock.block
                 block.opcode = blockd.opcode
                 block.parent = parentId
-                for (let i = 0; i < blockd.args.length; i++) {
-                    const arg = blockd.args[i]
-                    const narg = node.args[i]
-                    const defaultValue = defaultValues[arg.type]
-                    if (narg.type === 'Constant') {
-                        if (nonMenus.includes(arg.type)) {
-                            block.inputs[arg.name] = [ShadowType.SameShadow, [arg.type, narg.value]]
-                        } else {
-                            // So we think it's a menu
-                            if (arg.type === InputType.Variable) {
-                                if (narg.type !== 'Constant') throw te(`Can't use non-constant to argument ${i} in block ${node.name}`, narg)
-                                const variable = ast.variables.find(v => v.name === narg.value)
-                                if (!variable) throw te(`Undefined variable ${narg.value}`, narg)
-                                if (!variable.islocal) variable.used.push([funcBlock.id, 'fields', arg.name, '1'])
-                                block.fields[arg.name] = [variable.name, variable.id]
-                            }
-                        }
-                    } else {
-                        const subBlock = generate(narg, funcBlock.id)
-                        if (typeof subBlock !== 'string') {
-                            // It is constants, or array (variable or list)
-                            if (subBlock instanceof Array) {
-                                if (defaultValue === null) {
-                                    block.inputs[arg.name] = [ShadowType.DifferentShadow, subBlock, [arg.type, defaultValue]]
-                                } else {
-                                    block.inputs[arg.name] = [ShadowType.SameShadow, subBlock]
-                                }
-                            } else if (nonMenus.includes(arg.type)) {
-                                block.inputs[arg.name] = [ShadowType.SameShadow, [arg.type, narg.value]]
-                            } else {
-                                // So we think it's a menu
-                                if (arg.type === InputType.Variable) {
-                                    if (narg.type !== 'Constant') throw te(`Can't use non-constant to argument ${i} in block ${node.name}`, narg)
-                                    const variable = ast.variables.find(v => v.name === narg.value)
-                                    if (!variable) throw te(`Undefined variable ${narg.value}`, narg)
-                                    if (!variable.islocal) variable.used.push([funcBlock.id, 'fields', arg.name, '1', '2'])
-                                    block.fields[arg.name] = [InputType.Variable, variable.name, variable.id]
-                                }
-                            }
-                        } else {
-                            if (defaultValue === null) {
-                                block.inputs[arg.name] = [ShadowType.SameShadow, subBlock]
-                            } else {
-                                block.inputs[arg.name] = [ShadowType.DifferentShadow, subBlock, [arg.type, defaultValue]]
-                            }
-                        }
-                    }
-                }
+                addArgumentsToBlock(node, funcBlock, blockd.args, parentId)
                 // Check if block has substack
                 for (let i = 1; i <= blockd.subn; i++) {
                     const thisCase = node.cases.find(v => v.name && v.name.value === i)
-                    const inputName = substack(i)
+                    const inputName = `SUBSTACK${i > 1 ? i : ''}`
                     block.inputs[inputName] = [ShadowType.NoShadow, null]
                     // If they have something in this substack
                     if (thisCase) {

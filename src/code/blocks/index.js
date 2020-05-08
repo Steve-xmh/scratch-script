@@ -17,6 +17,7 @@
  * @property {string} name
  * @property {string} id
  * @property {string} description
+ * @property {*} value
  * @property {Array.<BlockD>} blocks
  *
  * @typedef {Object.<string, BlockDefinition>} BlockDefinitions
@@ -91,12 +92,14 @@ class BlockStorage {
 }
 
 BlockStorage.coreBlocks = {
-    events: require('./events'),
-    motions: require('./motions'),
-    operators: require('./operators'),
-    data: require('./data'),
+    motion: require('./motion'),
     looks: require('./looks'),
-    control: require('./control')
+    sound: require('./sound'),
+    events: require('./events'),
+    control: require('./control'),
+    sensing: require('./sensing'),
+    operators: require('./operators'),
+    data: require('./data')
 }
 
 BlockStorage.createWithCoreBlocks = function () {

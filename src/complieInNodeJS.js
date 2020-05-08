@@ -67,7 +67,7 @@ async function complieCode (file) {
                 } catch (err) {
                     if (err.type === 'CompileError') {
                         if (err.node) {
-                            console.log('CompileError: ', err.message + '\n  On compiling code: ' + modulePath + ':' + err.node.line + ':' + err.node.col)
+                            console.log('CompileError:', err.message + '\n  On compiling code: ' + modulePath + ':' + err.node.line + ':' + err.node.col)
                         }
                         return null
                     } else if (err.token) {
@@ -99,7 +99,7 @@ async function complieCode (file) {
     } catch (err) {
         if (err.type === 'CompileError') {
             if (err.node) {
-                console.log('CompileError: ', err.message + '\n  On compiling code: ' + file + ':' + err.node.line + ':' + err.node.col)
+                console.log('CompileError:', err.message + '\n  On compiling code: ' + file + ':' + err.node.line + ':' + err.node.col)
             }
             return null
         } else if (err.token) {

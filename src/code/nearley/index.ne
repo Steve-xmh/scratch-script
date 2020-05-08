@@ -395,7 +395,6 @@ function tryCalculate ([left,,sym,,right]) {
         col: left.col
     }
 }
-
 %}
 
 Parenthesized -> "(" Expression ")" {% d => d[1] %}

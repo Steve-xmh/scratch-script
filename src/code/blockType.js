@@ -14,11 +14,7 @@ const BlockType = {
     /**
      * 4
      */
-    EventBlock: 4,
-    /**
-     * 5
-     */
-    MutiSubstackBlock: 5
+    EventBlock: 4
 }
 
 module.exports = BlockType

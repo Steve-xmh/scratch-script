@@ -1,73 +1,65 @@
+
 const InputType = require('../inputType')
 const BlockType = require('../blockType')
 
-/*
-
-event_whentouchingobject
-event_broadcast
-event_broadcastandwait
-event_whengreaterthan
-
-event_whenflagclicked
-event_whenkeypressed
-event_whenthisspriteclicked
-event_whentouchingobject
-event_whenstageclicked
-event_whenbackdropswitchesto
-event_whengreaterthan
-event_whenbroadcastreceived
-
-*/
-
 module.exports = {
-    id: 'events',
     name: 'Events',
-    blocks: [
-        {
-            name: 'flagClicked',
-            opcode: 'event_whenflagclicked',
-            type: BlockType.EventBlock
-        }, {
-            name: 'pressedKey',
-            opcode: 'event_whenkeypressed',
-            type: BlockType.EventBlock
-        }, {
-            name: 'clickedThis',
-            opcode: 'event_whenthisspriteclicked',
-            type: BlockType.EventBlock
-        }, {
-            name: 'touched',
-            opcode: 'event_whentouchingobject',
-            type: BlockType.EventBlock,
-            args: [{
-                name: 'TOUCHINGOBJECTMENU',
-                type: InputType.Menu,
-                menuOpcode: 'event_touchingobjectmenu',
-                menu: input => ({
-                    mouse: {
-                        value: '_mouse_'
-                    },
-                    edge: {
-                        value: '_edge_'
-                    }
-                })[input.value]
-            }]
-        }, {
-            name: 'stageClicked',
-            opcode: 'event_whenstageclicked',
-            type: BlockType.EventBlock
-        }, {
-            name: 'switchedTo',
-            opcode: 'event_whenbackdropswitchesto',
-            type: BlockType.EventBlock
-        }, {
-            name: 'greaterThan',
-            opcode: 'event_whengreaterthan',
-            type: BlockType.EventBlock
-        }, {
-            name: 'gotBroadcast',
-            opcode: 'event_whenbroadcastreceived',
-            type: BlockType.EventBlock
-        }
-    ]
+    id: 'events',
+    blocks: [{
+        name: 'flagClicked',
+        opcode: 'event_whenflagclicked',
+        type: BlockType.EventBlock
+    }, {
+        name: 'keyPressed',
+        opcode: 'event_whenkeypressed',
+        type: BlockType.EventBlock,
+        args: [{
+            name: 'KEY_OPTION',
+            type: InputType.String
+        }]
+    }, {
+        name: 'clicked',
+        opcode: 'event_whenthisspriteclicked',
+        type: BlockType.EventBlock
+    }, {
+        name: 'backdropSwitchesTo',
+        opcode: 'event_whenbackdropswitchesto',
+        type: BlockType.EventBlock,
+        args: [{
+            name: 'BROADCAST_INPUT',
+            type: InputType.Broadcast
+        }]
+    }, {
+        name: 'greaterThan',
+        opcode: 'event_whengreaterthan',
+        type: BlockType.EventBlock,
+        args: [{
+            name: 'VALUE',
+            type: InputType.Number
+        }]
+    }, {
+        name: 'broadcastReceived',
+        opcode: 'event_whenbroadcastreceived',
+        type: BlockType.EventBlock,
+        args: [{
+            name: 'BROADCAST_OPTION',
+            type: InputType.Broadcast
+        }]
+    }, {
+        name: 'broadcast',
+        opcode: 'event_broadcast',
+        type: BlockType.Block,
+        args: [{
+            name: 'BROADCAST_INPUT',
+            type: InputType.Broadcast
+        }]
+    }, {
+        name: 'broadcastAndWait',
+        opcode: 'event_broadcastandwait',
+        type: BlockType.Block,
+        args: [{
+            name: 'BROADCAST_INPUT',
+            type: InputType.Broadcast
+        }]
+    }]
 }
