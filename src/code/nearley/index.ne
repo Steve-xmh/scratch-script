@@ -11,8 +11,8 @@ const lexer = moo.compile([
 
     {type: "STRING",  match: /".*?"/, value: x => JSON.parse(x)},
     {type: "STRING",  match: /'.*?'/, value: x => JSON.parse('"' + x.slice(1, -1) + '"')},
-    {type: "NUMBER",  match: /-?[1-9]\d*/, value: x => Number(x)},
     {type: "NUMBER",  match: /-?(?:[1-9]\d*\.\d*|0\.\d*[1-9]\d*|0?\.0+|0)/, value: x => Number(x)},
+    {type: "NUMBER",  match: /-?[1-9]\d*/, value: x => Number(x)},
     {type: "NUMBER",  match: /0x[0-9A-Fa-f]+/, value: x => parseInt(x)},
     {type: "NUMBER",  match: /0b[01]+/, value: x => parseInt(x)},
     {type: "NUMBER",  match: /0[0-7]+/, value: x => parseInt(x)},
@@ -120,13 +120,13 @@ _Statement ->
     | FunctionCall {% id %}
 
 EventListener ->
-    "when" __ %BLOCKIDEN _ "(" _ ArgList _ ")" _ FunctionBody
+    %KW_WHEN __ %BLOCKIDEN _ "(" ArgList ")" _ FunctionBody
 {% (d, pos, reject) => {
     return {
         type: "EventExpression",
         name: d[2].value,
-        args: d[6],
-        body: d[10],
+        args: d[5],
+        body: d[8],
         line: d[0].line,
         col: d[0].col
     }
@@ -134,26 +134,26 @@ EventListener ->
 
 # define *FunctionName* (*args*)
 FunctionDefinition ->
-    (%KW_ATONCE __ | null) %KW_DEFINE __ %IDEN _ "(" _ ParamList _ ")" _ FunctionBody
+    (%KW_ATONCE __ | null) %KW_DEFINE __ %IDEN _ "(" ParamList ")" _ FunctionBody
 {% d => {
     return {
         type: "FunctionDefinition",
         warp: !!d[0][0],
         name: d[3].value,
-        params: d[7],
-        body: d[11],
+        params: d[6],
+        body: d[9],
         line: d[0][0] ? d[0][0].line : d[1].line,
         col: d[0][0] ?d[0][0].col : d[1].line
     }
 } %}
 
 FunctionCall ->
-    (%BLOCKIDEN | %IDEN) _ "(" _ ArgList _ ")" InCases
+    (%BLOCKIDEN | %IDEN) _ "(" ArgList ")" InCases
 {% d => ({
     type: "FunctionCall",
     name: d[0][0].value,
-    args: d[4],
-    cases: d[7],
+    args: d[3],
+    cases: d[5],
     line: d[0][0].line,
     col: d[0][0].col
 }) %}
@@ -312,7 +312,8 @@ RepeatCondition ->
         })
     %}
 
-ArgList -> ExpList {% id %}
+ArgList -> _ {% d => [] %}
+    | _ ExpList _ {% d => d[1] %}
 
 # Cases
 
@@ -332,9 +333,13 @@ InCase -> "in" __ Constant __ FunctionBody {% d => [d[2].value, {
 }] %}
 
 ParamList ->
-    null {% () => [] %}
-    | Param
-    | ParamList _ "," _ Param {% d => { const t = d[0]; t.push(d[4]); return t } %}
+    _ {% d => [] %}
+    | _ _ParamList _ {% d => d[1] %}
+
+_ParamList ->
+    Param
+    | _ParamList _ "," _ Param {% d => { const t = d[0]; t.push(d[4]); return t } %}
+
 
 Param ->
     %IDEN (_ ":" _ ("string" | "number" | "bool")):? {% d => ({
@@ -360,13 +365,14 @@ SetVariable ->
     col: d[0].col
 }) %}
 
-ExpList -> ExpList _ "," _ Expression
+ExpList -> 
+    Expression {% d => (d[0] === undefined || d[0] === null) ? [] : d %}
+    | ExpList _ "," _ Expression
     {% d => {
         const r = d[0].slice()
         r.push(d[4])
         return r
     } %}
-    | Expression {% d => (d[0] === undefined || d[0] === null) ? [] : d %}
 
 # Expressions
 Expression -> ExpOr {% id %}
@@ -375,9 +381,9 @@ Expression -> ExpOr {% id %}
 function tryCalculate ([left,,sym,,right]) {
     const blocks = {
         "+": "math.add",
-        "-": "math.sub",
+        "-": "math.subtract",
         "*": "math.multiply",
-        "/": "math.devide",
+        "/": "math.divide",
         "<": "math.lt",
         ">": "math.gt",
         "%": "math.mod",
@@ -399,10 +405,10 @@ function tryCalculate ([left,,sym,,right]) {
 
 Parenthesized -> "(" Expression ")" {% d => d[1] %}
  
-ExpOr -> ExpOr __ "||" __ ExpAnd {% tryCalculate %}
+ExpOr -> ExpOr _ "||" _ ExpAnd {% tryCalculate %}
 	| ExpAnd {% id %}
  
-ExpAnd -> ExpAnd __ "&&" __ ExpComparison {% tryCalculate %}
+ExpAnd -> ExpAnd _ "&&" _ ExpComparison {% tryCalculate %}
 	| ExpComparison {% id %}
 
 ExpComparison ->

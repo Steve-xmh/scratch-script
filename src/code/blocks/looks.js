@@ -2,6 +2,43 @@
 const InputType = require('../inputType')
 const BlockType = require('../blockType')
 
+const effects = [
+    'Color',
+    'Fisheye',
+    'Whirl',
+    'Pixelate',
+    'Mosaic',
+    'Brightness'
+]
+
+const genEffectsBlocks = (effectName) => [{
+    name: `set${effectName}Effect`,
+    opcode: 'looks_seteffectto',
+    doc: `Set ${effectName.toLowerCase()} effect to a number.`,
+    type: BlockType.Block,
+    args: [{
+        name: 'VALUE',
+        type: InputType.Number
+    }, {
+        name: 'EFFECT',
+        type: InputType.MenuConstant,
+        value: effectName.toLowerCase()
+    }]
+}, {
+    name: `change${effectName}Effect`,
+    opcode: 'looks_changeeffectby',
+    doc: `Change ${effectName.toLowerCase()} effect by a number.`,
+    type: BlockType.Block,
+    args: [{
+        name: 'CHANGE',
+        type: InputType.Number
+    }, {
+        name: 'EFFECT',
+        type: InputType.MenuConstant,
+        value: effectName.toLowerCase()
+    }]
+}]
+
 module.exports = {
     name: 'Looks',
     id: 'looks',
@@ -86,22 +123,6 @@ module.exports = {
             type: InputType.Number
         }]
     }, {
-        name: 'changeEffect',
-        opcode: 'looks_changeeffectby',
-        type: BlockType.Block,
-        args: [{
-            name: 'CHANGE',
-            type: InputType.Number
-        }]
-    }, {
-        name: 'setEffect',
-        opcode: 'looks_seteffectto',
-        type: BlockType.Block,
-        args: [{
-            name: 'VALUE',
-            type: InputType.Number
-        }]
-    }, {
         name: 'clearGraphicEffects',
         opcode: 'looks_cleargraphiceffects',
         type: BlockType.Block
@@ -159,5 +180,5 @@ module.exports = {
         type: BlockType.ReporterBlock,
         args: []
     }
-    ]
+    ].concat(...effects.map(genEffectsBlocks))
 }

@@ -411,7 +411,10 @@ async function generator ({
             let isAllConstants = true
             if (!blockd.args) blockd.args = []
             for (let i = 0; i < blockd.args.length; i++) {
-                if (node.args[i].type !== 'Constant') {
+                if (!node.args[i]) {
+                    isAllConstants = false
+                    break
+                } else if (node.args[i] && node.args[i].type !== 'Constant') {
                     isAllConstants = false
                     break
                 }

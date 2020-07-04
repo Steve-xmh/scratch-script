@@ -8,11 +8,13 @@
     "ssc": "bin/ssc.js"
   },
   "scripts": {
+    "start": "node bin/ssc",
     "test": "node bin/ssc test/testProject -o test/output.sb3",
     "gendoc": "node scripts/gendoc",
     "prepare": "npm run nearley",
     "postinstall": "node scripts/postinstall.js",
     "nearley": "nearleyc ./src/code/nearley/index.ne -o ./src/code/nearley/index.js",
+    "nearley:nopost": "nearleyc ./src/code/nearley/nopostprocessors.ne -o ./src/code/nearley/nopostprocessors.js",
     "railroad": "nearley-railroad ./src/code/nearley/index.ne -o ./railroad.html"
   },
   "keywords": [
@@ -22,7 +24,15 @@
     "language",
     "programming-language"
   ],
-  "contributors": "https://github.com/Steve-xmh/scratch-script/graphs/contributors",
+  "author": {
+    "name": "Steve Xiao",
+    "email": "776470918@qq.com",
+    "url": "https://github.com/Steve-xmh"
+  },
+  "maintainers": [
+    "Steve Xiao <776470918@qq.com> (https://github.com/Steve-xmh)",
+    "Alex Cui <cuizhihui030925@outlook.com> (https://github.com/alexcui03)"
+  ],
   "license": "AGPL-3.0-or-later",
   "dependencies": {
     "@zeit/ncc": "0.22.1",

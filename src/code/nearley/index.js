@@ -14,8 +14,8 @@ const lexer = moo.compile([
 
     {type: "STRING",  match: /".*?"/, value: x => JSON.parse(x)},
     {type: "STRING",  match: /'.*?'/, value: x => JSON.parse('"' + x.slice(1, -1) + '"')},
-    {type: "NUMBER",  match: /-?[1-9]\d*/, value: x => Number(x)},
     {type: "NUMBER",  match: /-?(?:[1-9]\d*\.\d*|0\.\d*[1-9]\d*|0?\.0+|0)/, value: x => Number(x)},
+    {type: "NUMBER",  match: /-?[1-9]\d*/, value: x => Number(x)},
     {type: "NUMBER",  match: /0x[0-9A-Fa-f]+/, value: x => parseInt(x)},
     {type: "NUMBER",  match: /0b[01]+/, value: x => parseInt(x)},
     {type: "NUMBER",  match: /0[0-7]+/, value: x => parseInt(x)},
@@ -77,9 +77,9 @@ function ifCondition (d) {
 function tryCalculate ([left,,sym,,right]) {
     const blocks = {
         "+": "math.add",
-        "-": "math.sub",
+        "-": "math.subtract",
         "*": "math.multiply",
-        "/": "math.devide",
+        "/": "math.divide",
         "<": "math.lt",
         ">": "math.gt",
         "%": "math.mod",
@@ -154,36 +154,36 @@ var grammar = {
     {"name": "_Statement", "symbols": ["WhileCondition"], "postprocess": id},
     {"name": "_Statement", "symbols": ["IfCondition"], "postprocess": id},
     {"name": "_Statement", "symbols": ["FunctionCall"], "postprocess": id},
-    {"name": "EventListener", "symbols": [{"literal":"when"}, "__", (lexer.has("BLOCKIDEN") ? {type: "BLOCKIDEN"} : BLOCKIDEN), "_", {"literal":"("}, "_", "ArgList", "_", {"literal":")"}, "_", "FunctionBody"], "postprocess":  (d, pos, reject) => {
+    {"name": "EventListener", "symbols": [(lexer.has("KW_WHEN") ? {type: "KW_WHEN"} : KW_WHEN), "__", (lexer.has("BLOCKIDEN") ? {type: "BLOCKIDEN"} : BLOCKIDEN), "_", {"literal":"("}, "ArgList", {"literal":")"}, "_", "FunctionBody"], "postprocess":  (d, pos, reject) => {
             return {
                 type: "EventExpression",
                 name: d[2].value,
-                args: d[6],
-                body: d[10],
+                args: d[5],
+                body: d[8],
                 line: d[0].line,
                 col: d[0].col
             }
         } },
     {"name": "FunctionDefinition$subexpression$1", "symbols": [(lexer.has("KW_ATONCE") ? {type: "KW_ATONCE"} : KW_ATONCE), "__"]},
     {"name": "FunctionDefinition$subexpression$1", "symbols": []},
-    {"name": "FunctionDefinition", "symbols": ["FunctionDefinition$subexpression$1", (lexer.has("KW_DEFINE") ? {type: "KW_DEFINE"} : KW_DEFINE), "__", (lexer.has("IDEN") ? {type: "IDEN"} : IDEN), "_", {"literal":"("}, "_", "ParamList", "_", {"literal":")"}, "_", "FunctionBody"], "postprocess":  d => {
+    {"name": "FunctionDefinition", "symbols": ["FunctionDefinition$subexpression$1", (lexer.has("KW_DEFINE") ? {type: "KW_DEFINE"} : KW_DEFINE), "__", (lexer.has("IDEN") ? {type: "IDEN"} : IDEN), "_", {"literal":"("}, "ParamList", {"literal":")"}, "_", "FunctionBody"], "postprocess":  d => {
             return {
                 type: "FunctionDefinition",
                 warp: !!d[0][0],
                 name: d[3].value,
-                params: d[7],
-                body: d[11],
+                params: d[6],
+                body: d[9],
                 line: d[0][0] ? d[0][0].line : d[1].line,
                 col: d[0][0] ?d[0][0].col : d[1].line
             }
         } },
     {"name": "FunctionCall$subexpression$1", "symbols": [(lexer.has("BLOCKIDEN") ? {type: "BLOCKIDEN"} : BLOCKIDEN)]},
     {"name": "FunctionCall$subexpression$1", "symbols": [(lexer.has("IDEN") ? {type: "IDEN"} : IDEN)]},
-    {"name": "FunctionCall", "symbols": ["FunctionCall$subexpression$1", "_", {"literal":"("}, "_", "ArgList", "_", {"literal":")"}, "InCases"], "postprocess":  d => ({
+    {"name": "FunctionCall", "symbols": ["FunctionCall$subexpression$1", "_", {"literal":"("}, "ArgList", {"literal":")"}, "InCases"], "postprocess":  d => ({
             type: "FunctionCall",
             name: d[0][0].value,
-            args: d[4],
-            cases: d[7],
+            args: d[3],
+            cases: d[5],
             line: d[0][0].line,
             col: d[0][0].col
         }) },
@@ -316,7 +316,8 @@ var grammar = {
             col: d[0].col
         })
             },
-    {"name": "ArgList", "symbols": ["ExpList"], "postprocess": id},
+    {"name": "ArgList", "symbols": ["_"], "postprocess": d => []},
+    {"name": "ArgList", "symbols": ["_", "ExpList", "_"], "postprocess": d => d[1]},
     {"name": "InCases", "symbols": [], "postprocess": d => []},
     {"name": "InCases", "symbols": ["_", "_InCases"], "postprocess": d => Object.fromEntries(d[0])},
     {"name": "_InCases", "symbols": ["InCase"]},
@@ -328,9 +329,10 @@ var grammar = {
             line: d[0].line,
             col: d[0].col
         }] },
-    {"name": "ParamList", "symbols": [], "postprocess": () => []},
-    {"name": "ParamList", "symbols": ["Param"]},
-    {"name": "ParamList", "symbols": ["ParamList", "_", {"literal":","}, "_", "Param"], "postprocess": d => { const t = d[0]; t.push(d[4]); return t }},
+    {"name": "ParamList", "symbols": ["_"], "postprocess": d => []},
+    {"name": "ParamList", "symbols": ["_", "_ParamList", "_"], "postprocess": d => d[1]},
+    {"name": "_ParamList", "symbols": ["Param"]},
+    {"name": "_ParamList", "symbols": ["_ParamList", "_", {"literal":","}, "_", "Param"], "postprocess": d => { const t = d[0]; t.push(d[4]); return t }},
     {"name": "Param$ebnf$1$subexpression$1$subexpression$1", "symbols": [{"literal":"string"}]},
     {"name": "Param$ebnf$1$subexpression$1$subexpression$1", "symbols": [{"literal":"number"}]},
     {"name": "Param$ebnf$1$subexpression$1$subexpression$1", "symbols": [{"literal":"bool"}]},
@@ -355,17 +357,17 @@ var grammar = {
             line: d[0].line,
             col: d[0].col
         }) },
+    {"name": "ExpList", "symbols": ["Expression"], "postprocess": d => (d[0] === undefined || d[0] === null) ? [] : d},
     {"name": "ExpList", "symbols": ["ExpList", "_", {"literal":","}, "_", "Expression"], "postprocess":  d => {
             const r = d[0].slice()
             r.push(d[4])
             return r
         } },
-    {"name": "ExpList", "symbols": ["Expression"], "postprocess": d => (d[0] === undefined || d[0] === null) ? [] : d},
     {"name": "Expression", "symbols": ["ExpOr"], "postprocess": id},
     {"name": "Parenthesized", "symbols": [{"literal":"("}, "Expression", {"literal":")"}], "postprocess": d => d[1]},
-    {"name": "ExpOr", "symbols": ["ExpOr", "__", {"literal":"||"}, "__", "ExpAnd"], "postprocess": tryCalculate},
+    {"name": "ExpOr", "symbols": ["ExpOr", "_", {"literal":"||"}, "_", "ExpAnd"], "postprocess": tryCalculate},
     {"name": "ExpOr", "symbols": ["ExpAnd"], "postprocess": id},
-    {"name": "ExpAnd", "symbols": ["ExpAnd", "__", {"literal":"&&"}, "__", "ExpComparison"], "postprocess": tryCalculate},
+    {"name": "ExpAnd", "symbols": ["ExpAnd", "_", {"literal":"&&"}, "_", "ExpComparison"], "postprocess": tryCalculate},
     {"name": "ExpAnd", "symbols": ["ExpComparison"], "postprocess": id},
     {"name": "ExpComparison", "symbols": ["ExpComparison", "_", {"literal":">"}, "_", "ExpConcatenation"], "postprocess": tryCalculate},
     {"name": "ExpComparison", "symbols": ["ExpComparison", "_", {"literal":"<"}, "_", "ExpConcatenation"], "postprocess": tryCalculate},

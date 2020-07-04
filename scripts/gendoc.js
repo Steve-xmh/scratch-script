@@ -27,7 +27,7 @@ async function main () {
     for (const cate of index) {
         const blocks = BlockStorage._coreBlocks[cate]
         await f.write(`## ${blocks.name || blocks.id}\n`)
-        if ('description' in blocks) await f.write(`${blocks.description}  \n`)
+        if ('doc' in blocks) await f.write(`${blocks.doc}  \n`)
         await f.write('[Return To Index](#Index)  \n')
         await f.write(`ID: \`${blocks.id}\` \n`)
         if ('blocks' in blocks) {
@@ -46,7 +46,7 @@ async function main () {
                     await f.write(': any')
                 }
                 await f.write('`\n')
-                if ('desc' in block) await f.write(`${block.desc}  \n`)
+                if ('doc' in block) await f.write(`${block.doc}  \n`)
                 else await f.write(`Reference to \`${block.opcode}\`.  \n`)
             }
         }
