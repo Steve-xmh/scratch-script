@@ -111,7 +111,8 @@ if (base.mode === 'development') {
                 new CopyWebpackPlugin({
                     patterns: [
                         'src/playground',
-                        { from: 'node_modules/scratch-gui/dist/static/blocks-media', to: 'static/blocks-media' }
+                        { from: 'node_modules/scratch-gui/dist/static/blocks-media', to: 'static/blocks-media' },
+                        { from: 'node_modules/scratch-gui/dist/static', to: '../static' }
                     ]
                 })
             ])
