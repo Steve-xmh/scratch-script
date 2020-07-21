@@ -502,4 +502,4 @@ register './path/to/extension'
 > yarn start
 ```
 
-启动 webpack-dev-server 之后，访问 [localhost:8040/playground/](localhost:8040/playground/) 即可访问网页编辑器（仅供调试）。
+启动 webpack-dev-server 之后，访问 [http://localhost:8040/playground/](http://localhost:8040/playground/) 即可访问网页编辑器（仅供调试）。
