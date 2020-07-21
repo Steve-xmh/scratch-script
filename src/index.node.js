@@ -1,14 +1,15 @@
 
-const { promises: fs, existsSync } = require('fs')
-const path = require('path')
-const JSZip = require('jszip')
-const projectParser = require('./project/parser')
-const code = require('./code/index')
+import { promises as fs, existsSync } from 'fs'
+import path from 'path'
+import JSZip from 'jszip'
+import projectParser from './project/parser'
+import code from './code/index'
 
-const EMPTY_AUDIO = require('./project/emptyAudio')
-const EMPTY_SVG = require('./project/emptySvg')
+import EMPTY_AUDIO from './project/emptyAudio'
+import EMPTY_SVG from './project/emptySvg'
+import Package from '../package.json'
 
-const crypto = require('crypto')
+import crypto from 'crypto'
 
 function createFileDescription ({ hash, filename, name, x, y }) {
     return {
@@ -79,19 +80,19 @@ async function complieCode (file) {
             async askForRegister (reg) {
                 const relativeFile = path.resolve(dir, reg.file)
                 if (existsSync(relativeFile)) {
-                    return require(relativeFile)
+                    return await import(/* webpackIgnore: true */ relativeFile)
                 }
                 if (existsSync(relativeFile + '.js')) {
-                    return require(relativeFile)
+                    return await import(/* webpackIgnore: true */ relativeFile)
                 }
                 const envPath = process.env.SCRATCHSCRIPT_INCLUDE_DIR
                     ? path.resolve(process.env.SCRATCHSCRIPT_INCLUDE_DIR, reg.file)
                     : path.resolve(__dirname, reg.file)
                 if (existsSync(envPath)) {
-                    return require(relativeFile)
+                    return await import(/* webpackIgnore: true */ relativeFile)
                 }
                 if (existsSync(envPath + '.js')) {
-                    return require(relativeFile)
+                    return await import(/* webpackIgnore: true */ relativeFile)
                 }
                 return null
             }
@@ -114,7 +115,7 @@ async function complieCodeForTarget (start, target, stage = null) {
         if (!codeResults) return
         for (const variable of codeResults.ast.variables) {
             if (!variable.islocal && stage && target !== stage) {
-                if (variable.value instanceof Array) {
+                if (variable.value.value instanceof Array) {
                     const stageList = Object.entries(stage.lists).find(v => v[1][0] === variable.name)
                     if (stageList) {
                         for (const usedPath of variable.used) {
@@ -183,7 +184,7 @@ async function parseProject ({ projectInfo: proj, projectDir }) {
         extensions: [],
         meta: {
             semver: '3.0.0',
-            agent: 'ScratchScriptKit/' + require('../package.json').version
+            agent: 'ScratchScriptKit/' + Package.version
         }
     }
 
@@ -333,4 +334,8 @@ async function complieInNodeJS ({
     }
 }
 
-module.exports = complieInNodeJS
+export {
+    code as default,
+    projectParser,
+    complieInNodeJS
+}

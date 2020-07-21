@@ -1,6 +1,6 @@
 
-const InputType = require('../inputType')
-const BlockType = require('../blockType')
+import InputType from '../inputType'
+import BlockType from '../blockType'
 
 const effects = [
     'Color',
@@ -39,7 +39,7 @@ const genEffectsBlocks = (effectName) => [{
     }]
 }]
 
-module.exports = {
+export default {
     name: 'Looks',
     id: 'looks',
     blocks: [{

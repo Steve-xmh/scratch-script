@@ -1,5 +1,5 @@
 
-module.exports = {
+export default {
     data: '<svg xmlns="http://www.w3.org/2000/svg" width="480" height="360">' +
         '<g data-paper-data="{&quot;isPaintingLayer&quot;:true}">' +
         '<path d="M+0+0v0h0v0z" data-paper-data="{&quot;origPos&quot;:null}" fill="#FFF"' +

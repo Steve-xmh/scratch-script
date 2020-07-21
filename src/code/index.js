@@ -1,7 +1,7 @@
-const parser = require('./parser')
-const generator = require('./generator')
+import parser from './parser'
+import generator from './generator'
 
-module.exports = {
+export default {
     parser,
     generator
 }

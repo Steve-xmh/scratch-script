@@ -1,6 +1,7 @@
 node_modules/
 test/
 build/
+playground/
 railroad.html
 yarn-error.log
 src/code/nearley/index.ne

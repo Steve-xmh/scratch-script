@@ -1,6 +1,6 @@
 // A empty audio in mp3 format.
 
-module.exports = {
+export default {
     hash: '94b8c2c5d15e5a3d77c2e34eed3c7c87',
     filename: '94b8c2c5d15e5a3d77c2e34eed3c7c87.mp3',
     type: 'mp3',

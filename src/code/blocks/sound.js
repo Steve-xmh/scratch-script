@@ -1,8 +1,8 @@
 
-const InputType = require('../inputType')
-const BlockType = require('../blockType')
+import InputType from '../inputType'
+import BlockType from '../blockType'
 
-module.exports = {
+export default {
     name: 'Sound',
     id: 'sound',
     blocks: [{
