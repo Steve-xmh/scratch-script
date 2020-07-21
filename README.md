@@ -49,7 +49,7 @@ We recommend you to use Yarn to setup the environment, npm also works.
 > yarn start
 ```
 
-This will start webpack dev server, then you can access (localhost:8040/playground/)[localhost:8040/playground/] to the playground (only for debug).
+This will start webpack dev server, then you can access [localhost:8040/playground/](localhost:8040/playground/) to the playground (only for debug).
 
 ## Usage
 
