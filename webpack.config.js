@@ -49,7 +49,8 @@ const base = {
                 include: /\.min\.js$/
             })
         ]
-    }
+    },
+    plugins: []
 }
 
 const configs = [
