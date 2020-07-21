@@ -1,7 +1,9 @@
-const uid = require('./uid')
-const BlockStorage = require('./blocks/index').createWithCoreBlocks()
-const InputType = require('./inputType')
-const BlockType = require('./blockType')
+import uid from './uid'
+import { createWithCoreBlocks } from './blocks/index'
+import InputType from './inputType'
+import BlockType from './blockType'
+
+const BlockStorage = createWithCoreBlocks()
 
 /**
  * @enum {ShadowType}
@@ -256,7 +258,9 @@ async function generator ({
                 const arg = realArgs[i]
                 const narg = node.args[i]
                 const defaultValue = DefaultValues[arg.type]
-                if (narg.type === 'Constant') {
+                if (narg === null) {
+                    continue
+                } else if (narg.type === 'Constant') {
                     if (nonMenus.includes(arg.type)) {
                         block.block.inputs[arg.name] = [ShadowType.SameShadow, [arg.type, narg.value]]
                     } else {
@@ -289,13 +293,9 @@ async function generator ({
                     if (typeof subBlock !== 'string') {
                         // It is constants, or array (variable or list)
                         if (subBlock instanceof Array) {
-                            if (defaultValue === null) {
-                                block.block.inputs[arg.name] = [ShadowType.DifferentShadow, subBlock, [arg.type, defaultValue]]
-                            } else {
-                                block.block.inputs[arg.name] = [ShadowType.SameShadow, subBlock]
-                            }
+                            block.block.inputs[arg.name] = [ShadowType.DifferentShadow, subBlock, [arg.type, defaultValue]]
                         } else if (nonMenus.includes(arg.type)) {
-                            block.block.inputs[arg.name] = [ShadowType.SameShadow, [arg.type, narg.value]]
+                            block.block.inputs[arg.name] = [ShadowType.DifferentShadow, [arg.type, narg.value], [arg.type, defaultValue]]
                         } else {
                             // So we think it's a menu
                             if (arg.type === InputType.Variable) {
@@ -359,7 +359,7 @@ async function generator ({
                     }
                 }
             }
-            addArgumentsToBlock(node, block, blockd.args, parentId)
+            addArgumentsToBlock(node, evtBlock, blockd.args, parentId)
             return evtBlock.id
         }
         case 'FunctionCall':
@@ -386,15 +386,12 @@ async function generator ({
                     const defaultValue = DefaultValues[valueType]
                     if (node.args[i].type !== 'Constant') {
                         const subBlock = generate(node.args[i], callId)
-                        if (subBlock instanceof Array) {
-                            callBlock.inputs[argid] = [ShadowType.SameShadow, subBlock]
-                        } else if (typeof subBlock === 'string') {
-                            callBlock.inputs[argid] = [ShadowType.DifferentShadow, subBlock, [valueType, defaultValue]]
-                        } else if (typeof subBlock === 'object' && subBlock.type === 'Constant') {
-                            callBlock.inputs[argid] = [ShadowType.DifferentShadow, subBlock, [valueType, subBlock.value]]
+                        callBlock.inputs[argid] = [ShadowType.DifferentShadow, subBlock, [valueType, defaultValue]]
+                        if (typeof subBlock === 'object' && subBlock.type === 'Constant') {
+                            callBlock.inputs[argid][2] = [valueType, subBlock.value]
                         }
                     } else {
-                        callBlock.inputs[argid] = [ShadowType.SameShadow, [valueType, node.args[i].value]]
+                        callBlock.inputs[argid] = [ShadowType.DifferentShadow, [valueType, node.args[i].value], [valueType, defaultValue]]
                     }
                 })
                 callBlock.mutation.argumentids = JSON.stringify(callBlock.mutation.argumentids)
@@ -429,11 +426,11 @@ async function generator ({
                 addArgumentsToBlock(node, funcBlock, blockd.args, parentId)
                 // Check if block has substack
                 for (let i = 1; i <= blockd.subn; i++) {
-                    const thisCase = node.cases.find(v => v.name && v.name.value === i)
-                    const inputName = `SUBSTACK${i > 1 ? i : ''}`
-                    block.inputs[inputName] = [ShadowType.NoShadow, null]
                     // If they have something in this substack
-                    if (thisCase) {
+                    if (i in node.cases) {
+                        const thisCase = node.cases[i]
+                        const inputName = `SUBSTACK${i > 1 ? i : ''}`
+                        block.inputs[inputName] = [ShadowType.NoShadow, null]
                         let parentBlockId = funcBlock.id
                         for (const statement of thisCase.body) {
                             const temp = generate(statement, parentBlockId)
@@ -569,4 +566,4 @@ async function generator ({
     }
 }
 
-module.exports = generator
+export default generator

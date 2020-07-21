@@ -8,9 +8,7 @@ const fs = require('fs')
 
 const version = require('../package.json').version
 
-let ss
-if (fs.existsSync(path.join(__dirname, '../build/index.js'))) ss = require('../build')
-else ss = require('../src/index')
+const ss = require('../dist/node/ssc')
 
 prog.version(version, '-v, --version')
     .name('ssc')

@@ -26,4 +26,4 @@ const uid = function () {
     return id.join('') + (counter++).toString(16)
 }
 
-module.exports = uid
+export default uid

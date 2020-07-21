@@ -1,4 +1,5 @@
-const nearley = require('nearley')
+import nearley from 'nearley'
+import nearleyGrammar from './grammar.ne'
 const te = token => new TypeError(`Unknown token "${token.value}" at ${token.location.line}:${token.location.row}`)
 
 /**
@@ -105,7 +106,7 @@ const te = token => new TypeError(`Unknown token "${token.value}" at ${token.loc
  * @returns {AST}
  */
 function parser (src) {
-    const grammar = nearley.Grammar.fromCompiled(require('./nearley'))
+    const grammar = nearley.Grammar.fromCompiled(nearleyGrammar)
     const ne = new nearley.Parser(grammar)
     ne.lexer.reset()
     ne.feed(src)
@@ -120,4 +121,4 @@ function parser (src) {
     return result[0]
 }
 
-module.exports = parser
+export default parser

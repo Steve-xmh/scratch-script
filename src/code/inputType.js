@@ -62,4 +62,4 @@ const InputType = {
     MenuConstant: 31
 }
 
-module.exports = InputType
+export default InputType

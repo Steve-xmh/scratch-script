@@ -24,7 +24,16 @@
  * @returns {BlockStorage}
  */
 
-const InputType = require('../inputType')
+import InputType from '../inputType'
+
+import MotionBlocks from './motion'
+import LooksBlocks from './looks'
+import SoundBlocks from './sound'
+import EventsBlocks from './events'
+import ControlBlocks from './control'
+import SensingBlocks from './sensing'
+import OperatorsBlocks from './operators'
+import DataBlocks from './data'
 
 class BlockStorage {
     constructor () {
@@ -94,17 +103,17 @@ class BlockStorage {
 }
 
 BlockStorage.coreBlocks = {
-    motion: require('./motion'),
-    looks: require('./looks'),
-    sound: require('./sound'),
-    events: require('./events'),
-    control: require('./control'),
-    sensing: require('./sensing'),
-    operators: require('./operators'),
-    data: require('./data')
+    motion: MotionBlocks,
+    looks: LooksBlocks,
+    sound: SoundBlocks,
+    events: EventsBlocks,
+    control: ControlBlocks,
+    sensing: SensingBlocks,
+    operators: OperatorsBlocks,
+    data: DataBlocks
 }
 
-BlockStorage.createWithCoreBlocks = function () {
+const createWithCoreBlocks = function () {
     const storage = new BlockStorage()
     for (const key in BlockStorage.coreBlocks) {
         storage._register(BlockStorage.coreBlocks[key])
@@ -112,4 +121,7 @@ BlockStorage.createWithCoreBlocks = function () {
     return storage
 }
 
-module.exports = BlockStorage
+export {
+    BlockStorage as default,
+    createWithCoreBlocks
+}

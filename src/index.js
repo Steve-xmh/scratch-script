@@ -1,9 +1,10 @@
-const code = require('./code/index')
-const projectParser = require('./project/parser')
-const complieInNodeJS = require('./complieInNodeJS')
+import code from './code/index'
+import projectParser from './project/parser'
 
-module.exports = {
-    code,
+const complieInNodeJS = () => { throw new Error('This is only nodejs use.') }
+
+export {
+    code as default,
     projectParser,
     complieInNodeJS
 }

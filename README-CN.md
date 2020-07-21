@@ -6,6 +6,7 @@ Chinese 中文 [English](./README.md)
 
 ScratchScript 示例：
 ```lua
+var direction = 0;
 when events.flagClicked() {
     looks.sayFor('Hello ScratchScript!', 3);
     forever {
@@ -490,3 +491,15 @@ register './path/to/extension'
         - `menu` 函数，如果类型为枚举菜单，则此参数用于处理用户输入并返回需要存储的真实值。
         - `menuOpcode` 字符串，在大多数情况下，菜单都属于独立的模块（只是因为 Shadow 所以拖不出来），所以这里如果提供，则作为这个菜单模块的模块 ID，否则将直接菜单值作为普通参数存储。
 
+## 编译器开发
+
+### 部署
+
+推荐使用 Yarn 进行各种库的下载及构建工具的运行，NPM 也是可以的。
+
+```bash
+> yarn
+> yarn start
+```
+
+启动 webpack-dev-server 之后，访问 (localhost:8040/playground/)[localhost:8040/playground/] 即可访问网页编辑器（仅供调试）。

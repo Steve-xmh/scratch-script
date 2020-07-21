@@ -12,6 +12,7 @@ A toolchain to make scratch project without drag any thing.
 
 ScratchScript Example:
 ```lua
+var direction = 0;
 when events.flagClicked() {
     looks.sayFor('Hello ScratchScript!', 3);
     forever {
@@ -38,6 +39,17 @@ English document is in progress (:P)
 ```shell
 > npm i scratch-script -g
 ```
+
+## Development
+
+We recommend you to use Yarn to setup the environment, npm also works.
+
+```bash
+> yarn
+> yarn start
+```
+
+This will start webpack dev server, then you can access (localhost:8040/playground/)[localhost:8040/playground/] to the playground (only for debug).
 
 ## Usage
 

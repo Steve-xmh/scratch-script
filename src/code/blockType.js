@@ -17,4 +17,4 @@ const BlockType = {
     EventBlock: 4
 }
 
-module.exports = BlockType
+export default BlockType

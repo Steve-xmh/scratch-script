@@ -1,8 +1,8 @@
 
-const InputType = require('../inputType')
-const BlockType = require('../blockType')
+import InputType from '../inputType'
+import BlockType from '../blockType'
 
-module.exports = {
+export default {
     name: 'Events',
     id: 'events',
     blocks: [{
@@ -15,7 +15,7 @@ module.exports = {
         type: BlockType.EventBlock,
         args: [{
             name: 'KEY_OPTION',
-            type: InputType.String
+            type: InputType.Menu
         }]
     }, {
         name: 'clicked',
