@@ -105,13 +105,15 @@ if (base.mode === 'development') {
                 react: 'React',
                 codemirror: 'CodeMirror',
                 'react-dom': 'ReactDOM',
+                'scratch-gui': 'GUI',
                 jszip: 'JSZip'
             },
             plugins: base.plugins.concat([
                 new CopyWebpackPlugin({
                     patterns: [
                         'src/playground',
-                        { from: 'node_modules/scratch-gui/dist/static/blocks-media', to: 'static/blocks-media' }
+                        { from: 'node_modules/scratch-gui/dist/static/blocks-media', to: 'static/blocks-media' },
+                        { from: 'node_modules/scratch-gui/dist', to: '../' }
                     ]
                 })
             ])

@@ -22,7 +22,7 @@ const genEffectsBlocks = (effectName) => [{
     }, {
         name: 'EFFECT',
         type: InputType.MenuConstant,
-        value: effectName.toLowerCase()
+        value: effectName.toUpperCase()
     }]
 }, {
     name: `change${effectName}Effect`,
@@ -35,7 +35,7 @@ const genEffectsBlocks = (effectName) => [{
     }, {
         name: 'EFFECT',
         type: InputType.MenuConstant,
-        value: effectName.toLowerCase()
+        value: effectName.toUpperCase()
     }]
 }]
 

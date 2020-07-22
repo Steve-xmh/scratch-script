@@ -9,14 +9,14 @@ const lexer = moo.compile([
     {type: "SPACE",     match: /[\s;]+/, lineBreaks: true},
     {type: "DELIMITER", match: ";"},
 
-    {type: "STRING",  match: /"(?:\\["\\]|[^\n"\\])*"/, value: x => JSON.parse(x)},
-    {type: "STRING",  match: /'(?:\\['\\]|[^\n'\\])*'/, value: x => JSON.parse('"' + x.slice(1, -1).replace(/^\\'/, "'") + '"')},
+    {type: "NUMBER",  match: /0x[0-9A-Fa-f]+/, value: x => parseInt(x, 16)},
+    {type: "NUMBER",  match: /0b[01]+/, value: x => parseInt(x, 2)},
+    {type: "NUMBER",  match: /0[0-7]+/, value: x => parseInt(x, 8)},
     {type: "NUMBER",  match: /-?(?:[1-9]\d*\.\d*|0\.\d*[1-9]\d*|0?\.0+|0)/, value: x => Number(x)},
     {type: "NUMBER",  match: /-?[1-9]\d*/, value: x => Number(x)},
-    {type: "NUMBER",  match: /0x[0-9A-Fa-f]+/, value: x => parseInt(x)},
-    {type: "NUMBER",  match: /0b[01]+/, value: x => parseInt(x)},
-    {type: "NUMBER",  match: /0[0-7]+/, value: x => parseInt(x)},
-    {type: "COLOR",   match: /#[A-Fa-f0-9]{3}(?:[A-Fa-f0-9](?:[A-Fa-f0-9]{2}(?:[A-Fa-f0-9]{2})))?/},
+    {type: "COLOR",   match: /#[A-Fa-f0-9]{3}(?:[A-Fa-f0-9]{3})?/},
+    {type: "STRING",  match: /"(?:\\["\\]|[^\n"\\])*"/, value: x => JSON.parse(x)},
+    {type: "STRING",  match: /'(?:\\['\\]|[^\n'\\])*'/, value: x => JSON.parse('"' + x.slice(1, -1).replace(/^\\'/, "'") + '"')},
 
     {type: "COMMA", match: ","},
     {type: "LP",    match: "("},
@@ -45,7 +45,6 @@ const lexer = moo.compile([
     {type: "KW_NULL",     match: "null"},
     {type: "KW_WHEN",     match: "when"},
     {type: "KW_TRUE",     match: "true"},
-    {type: "KW_END",      match: "end"},
     {type: "KW_LET",      match: "let"},
     {type: "KW_VAR",      match: "var"},
     {type: "KW_IF",       match: "if"},
@@ -505,7 +504,15 @@ Constant ->
         col: d.col
     }) %}
     | %COLOR {% ([d], l ,reject) => {
-        if ([3, 4, 6, 8].includes(d[1].length - 1)) {
+        if ([3, 6].includes(d.value.length - 1)) {
+            if (d.value.length - 1 === 3) {
+                return {
+                    type: "Constant",
+                    value: d.value[0] + d.value[1].repeat(2) + d.value[2].repeat(2) + d.value[3].repeat(2),
+                    line: d.line,
+                    col: d.col
+                }
+            }
             return {
                 type: "Constant",
                 value: d.value,
