@@ -263,6 +263,11 @@ async function generator ({
                 } else if (narg.type === 'Constant') {
                     if (nonMenus.includes(arg.type)) {
                         block.block.inputs[arg.name] = [ShadowType.SameShadow, [arg.type, narg.value]]
+                        if (arg.type === InputType.Color && typeof narg.value === 'number') {
+                            const hex = narg.value.toString(16)
+                            if (hex.length > 6) throw te(`Color number is bigger than 1048575 (${narg.value})`, node)
+                            block.block.inputs[arg.name][1][1] = '#' + '0'.repeat(6 - hex.length) + hex
+                        }
                     } else {
                         // So we think it's a menu
                         if (narg.type !== 'Constant') throw te(`Can't use non-constant to argument ${i} in block ${node.name}`, narg)

@@ -184,18 +184,11 @@ nameWhateverUWant
 请勿将下列关键字用于变量或函数定义。
 
 ```
-bool
-define
-for
-forever
-in
-number
-register
-repeat
-string
-using
-when
-while
+atonce bool define false
+for forever if in let
+number null register
+repeat string true using
+var when while
 ```
 
 #### 注释
