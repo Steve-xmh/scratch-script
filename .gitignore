@@ -1,7 +1,7 @@
-node_modules/
-test/
-dist/
-playground/
-.vscode/
+/node_modules
+/test
+/dist
+/playground
+/.vscode
 railroad.html
 yarn-error.log

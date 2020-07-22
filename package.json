@@ -10,9 +10,9 @@
   },
   "scripts": {
     "start": "webpack-dev-server",
-    "test": "node bin/ssc test/testProject -o test/output.sb3",
+    "test": "ava test/test/*.js",
     "gendoc": "node scripts/gendoc",
-    "prepare": "set NODE_ENV=production&& webpack --progress --color",
+    "prepare": "node scripts/gendoc && set NODE_ENV=production&& webpack --progress --color",
     "railroad": "nearley-railroad ./src/code/nearley/index.ne -o ./railroad.html"
   },
   "keywords": [
@@ -63,6 +63,7 @@
     "react-dom": "^16.13.1",
     "rimraf": "^3.0.2",
     "scratch-gui": "^0.1.0-prerelease.20200720192905",
+    "scratch-vm": "^0.2.0-prerelease.20200720182258",
     "webpack": "^4.43.0",
     "webpack-cli": "^3.3.12",
     "webpack-dev-server": "^3.11.0"

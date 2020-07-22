@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>ScratchScript Playground</title>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.55.0/codemirror.min.js" integrity="sha512-ipquLAQ1BQSTjqPDqkXNGXfHBv6ivlhE5Di0mhI/YraFhJPEagKt1MKUY7eqCqfsDEGcinRhEMuCsk2eBlydrw==" crossorigin="anonymous"></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/react/16.13.1/umd/react.production.min.js" integrity="sha512-SUJujhtUWZUlwsABaZNnTFRlvCu7XGBZBL1VF33qRvvgNk3pBS9E353kcag4JAv05/nsB9sanSXFbdHAUW9+lg==" crossorigin="anonymous"></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/16.13.1/umd/react-dom.production.min.js" integrity="sha512-SYsXmAblZhruCNUVmTp5/v2a1Fnoia06iJh3+L9B9wUaqpRVjcNBQsqAglQG9b5+IaVCfLDH5+vW923JL5epZA==" crossorigin="anonymous"></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/redux/4.0.5/redux.min.js" integrity="sha512-P36ourTueX/PrXrD4Auc1kVLoTE7bkWrIrkaM0IG2X3Fd90LFgTRogpZzNBssay0XOXhrIgudf4wFeftdsPDiQ==" crossorigin="anonymous"></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.5.0/jszip.min.js" integrity="sha512-y3o0Z5TJF1UsKjs/jS2CDkeHN538bWsftxO9nctODL5W40nyXIbs0Pgyu7//icrQY9m6475gLaVr39i/uh/nLA==" crossorigin="anonymous"></script>
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.55.0/codemirror.min.css" integrity="sha512-/BlxZbYLtYGExexketXsTi47eHp+r2kTeq2OHecQPZlfbc7WFXVrwbVW9HOYjI6c9Ti+P60ASmVLxittZ0EBGw==" crossorigin="anonymous" />
+    </head>
+    <body style="margin: 0; padding: 0;">
+        <div style="position: fixed; flex-direction: column; display: flex; padding: 0; height: 100%; width: 100%;">
+            <h1 style="margin: 1rem;">ScratchScript Playground</h1>
+            <div style="margin: 1rem;">
+                Here is a playground use to debug ScratchScript compiler. <br/>
+                If you like, you can make it as a drynamic code editor.
+            </div>
+            <div style="display: flex; width: 100%; height: 100%;">
+                <textarea style="flex: 0.35; resize: horizontal; margin: 1rem;"></textarea>
+                <div id="scratchgui" style="flex: 1; margin: 1rem; box-shadow: 0 0 0px 2px #4d97ff; border-radius: 1rem; overflow: hidden; background-color: #4d97ff;"></div>
+            </div>
+        </div>
+        <script src="/scratch-gui.js"></script>
+        <script src="playground.js"></script>
+    </body>
+</html>
