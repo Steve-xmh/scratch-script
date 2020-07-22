@@ -4,6 +4,8 @@ const defaultsDeep = require('lodash.defaultsdeep')
 const TerserWebpackPlugin = require('terser-webpack-plugin')
 const path = require('path')
 
+console.log(process.env.NODE_ENV)
+
 const mode = process.env.NODE_ENV === 'production' ? 'production' : 'development'
 
 const base = {

@@ -1,6 +1,6 @@
 {
   "name": "scratch-script",
-  "version": "0.1.9",
+  "version": "0.1.10",
   "description": "[Alpha] An easy language to make huge scratch code more easily. ✨",
   "repository": "https://github.com/Steve-xmh/scratch-script",
   "main": "dist/node/ssc.js",
@@ -10,9 +10,10 @@
   },
   "scripts": {
     "start": "webpack-dev-server",
+    "build": "cross-env NODE_ENV=production webpack --progress --color",
     "test": "ava test/test/*.js",
     "gendoc": "node scripts/gendoc",
-    "prepare": "node scripts/gendoc && set NODE_ENV=production&& webpack --progress --color",
+    "prepare": "npm run build && npm run gendoc && npm run test",
     "railroad": "nearley-railroad ./src/code/nearley/index.ne -o ./railroad.html"
   },
   "keywords": [
@@ -49,6 +50,7 @@
     "babel-loader": "^8.1.0",
     "babel-plugin-transform-runtime": "^6.23.0",
     "copy-webpack-plugin": "^6.0.3",
+    "cross-env": "^7.0.2",
     "eslint": "^6.8.0",
     "eslint-config-standard": "^14.1.0",
     "eslint-plugin-import": "^2.20.1",
