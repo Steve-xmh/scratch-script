@@ -8,7 +8,7 @@
 
 Code feature is in alpha statement, . But others (sprites or stage definition) are finished.
 
-A toolchain to make scratch project without drag any thing.
+A toolchain to make scratch projects without dragging anything.
 
 ScratchScript Example:
 ```lua
